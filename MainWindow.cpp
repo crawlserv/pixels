@@ -219,38 +219,26 @@ void MainWindow::setPixelSize(unsigned short size) {
 
 // write one pixel into the buffer
 void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b) {
-	if(this->pixelBuffer) {
-		const auto offsetX = x * this->pixelSize;
-		const auto offsetY = y * this->pixelSize;
-		short limitX = this->pixelSize;
-		auto limitY = this->pixelSize;
+	const auto offsetX = x * this->pixelSize;
+	const auto offsetY = y * this->pixelSize;
+	short limitX = this->pixelSize;
+	auto limitY = this->pixelSize;
 
-		if(static_cast<int>(offsetX + limitX) > this->width)
-			limitX = this->width - offsetX;
+	if(static_cast<int>(offsetX + limitX) > this->width)
+		limitX = this->width - offsetX;
 
-		if(static_cast<int>(offsetY + limitY) > this->height)
-			limitY = this->height - offsetY	;
+	if(static_cast<int>(offsetY + limitY) > this->height)
+		limitY = this->height - offsetY	;
 
-		for(unsigned short relX = 0; relX < limitX; ++relX)
-			for(unsigned short relY = 0; relY < limitY; ++relY)
-				this->pixels.set(
-						offsetX + relX,
-						offsetY + relY,
-						r,
-						g,
-						b
-				);
-	}
-	else {
-		glBegin(GL_POINTS);
-			glColor3ub(r, g, b);
-
-			glVertex2i(
-					x * this->pixelSize + this->halfPixelSize,
-					y * this->pixelSize + this->halfPixelSize
+	for(unsigned short relX = 0; relX < limitX; ++relX)
+		for(unsigned short relY = 0; relY < limitY; ++relY)
+			this->pixels.set(
+					offsetX + relX,
+					offsetY + relY,
+					r,
+					g,
+					b
 			);
-		glEnd();
-	}
 }
 
 // set callback function for resize
@@ -317,6 +305,10 @@ void MainWindow::initPixelBuffer() {
 
 	// generate pixel buffer
 	glGenBuffers(1, &(this->pixelBuffer));
+
+	// check pixel buffer
+	if(!(this->pixelBuffer))
+		throw std::runtime_error("Could not create pixel buffer");
 
 	// reserve memory for pixel buffer
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pixelBuffer);
