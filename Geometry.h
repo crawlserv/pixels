@@ -58,7 +58,7 @@ namespace Geometry {
 				|| (r2.y1 >= r1.y1 && r2.y2 <= r1.y2));	// is [r2.y1; r2.y2] inside [r1.y1; r1.y2]?
 	}
 
-	// add a rectangle and split the overlapping rectangles removing the overlapped parts
+	// add a rectangle and split the clipped rectangles removing the overlapped parts
 	template<typename T, typename C>
 	inline void addAndSplit(std::vector<Rectangle<T, C>>& rects, const Rectangle<T, C>& newRect, T min = 0) {
 		const size_t oldSize = rects.size();
