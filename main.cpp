@@ -12,6 +12,7 @@ int main(int argc, char * argv[]) {
 	/*
 	 * EXAMPLE 1: render random noise
 	 *
+	 * Press SPACE to change the algorithm for creating pseudo-random numbers.
 	 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
 	 */
 	//return ExampleNoise().run(argc, argv);
