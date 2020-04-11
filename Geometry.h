@@ -70,6 +70,7 @@ namespace Geometry {
 
 			// check whether new rectangle overlaps with the current rectangle
 			if(overlap(ref, newRect)) {
+				// queue rectangle for deletion
 				toDelete.push_back(index);
 
 				/*
@@ -103,13 +104,13 @@ namespace Geometry {
 				T x_after = 0;
 
 				if(x_begin_before && !x_end_after)
-					// new rectangle begins before old rectangle
+					// new rectangle begins before old rectangle on X axis
 					x_after = ref.x2;
 				else if(x_end_after && !x_begin_before)
-					// new rectangle ends after old rectangle
+					// new rectangle ends after old rectangle on X axis
 					x_before = ref.x1;
 				else if(!x_begin_before && !x_end_after) {
-					// new rectangle is inside old rectangle
+					// new rectangle is inside old rectangle on X axis
 					x_before = ref.x1;
 					x_after = ref.x2;
 				}
@@ -121,19 +122,19 @@ namespace Geometry {
 				T y_after = 0;
 
 				if(y_begin_before && !y_end_after)
-					// new rectangle begins before old rectangle
+					// new rectangle begins before old rectangle on Y axis
 					y_after = ref.y2;
 				else if(y_end_after && !y_begin_before)
-					// new rectangle ends after old rectangle
+					// new rectangle ends after old rectangle on Y axis
 					y_before = ref.y1;
 				else if(!y_begin_before && !y_end_after) {
-					// new rectangle is inside old rectangle
+					// new rectangle is inside old rectangle on Y axis
 					y_before = ref.y1;
 					y_after = ref.y2;
 				}
 
 				/*
-				 * ADD ADDITIONAL RECTS
+				 * ADD ADDITIONAL RECTANGLES
 				 */
 
 				if(x_before) {
@@ -167,19 +168,23 @@ namespace Geometry {
 				}
 
 				if(y_before)
+					// the X_MIDDLE part of Y_BEFORE
 					addIfLarger(rects, ref.x1, y_before, ref.x2, newRect.y1, ref.c, min);
 
 				if(y_after)
+					// the X_MIDDLE part of Y_AFTER
 					addIfLarger(rects, ref.x1, newRect.y2, ref.x2, y_after, ref.c, min);
 			}
 		}
 
+		// delete clipped and overdrawn rectangles
 		while(!toDelete.empty()) {
 			rects.erase(rects.begin() + toDelete.back());
 
 			toDelete.pop_back();
 		}
 
+		// add the new rectangle
 		addIfLarger(rects, newRect, min);
 	}
 }
