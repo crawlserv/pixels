@@ -9,9 +9,10 @@
 #define EXAMPLENOISE_H_
 
 #include "Engine.h"
+#include "Rand.h"
 
 #include <cstdlib>		// EXIT_SUCCESS
-#include <random>		// std::mt19937, std::random_device, std::uniform_int_distribution
+#include <string>		// std::string
 
 class ExampleNoise : Engine {
 public:
@@ -25,9 +26,8 @@ private:
 	void onUpdate(double elapsedTime) override;
 
 	unsigned short pixelSize;
-	std::random_device rd;
-	std::mt19937 mt;
-	std::uniform_int_distribution<unsigned char> dist;
+
+	Rand randGenerator;
 };
 
 #endif /* EXAMPLENOISE_H_ */

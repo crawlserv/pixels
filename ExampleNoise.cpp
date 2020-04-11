@@ -7,7 +7,7 @@
 
 #include "ExampleNoise.h"
 
-ExampleNoise::ExampleNoise() : pixelSize(2), mt(this->rd()), dist(0, 255) {}
+ExampleNoise::ExampleNoise() : pixelSize(2) {}
 
 ExampleNoise::~ExampleNoise() {}
 
@@ -18,6 +18,7 @@ int ExampleNoise::run(int argc, char * argv[]) {
 	const int height = 600;
 
 	this->setPixelSize(this->pixelSize);
+	this->setDebugText(this->randGenerator.str());
 
 	this->createMainWindow(width, height, name);
 
@@ -38,9 +39,9 @@ void ExampleNoise::onUpdate(double elapsedTime) {
 	if(w > 0 && h > 0) {
 		for(int x = 0; x < w; ++x) {
 			for(int y = 0; y < h; ++y) {
-				const unsigned char r = this->dist(this->mt);
-				const unsigned char g = this->dist(this->mt);
-				const unsigned char b = this->dist(this->mt);
+				const unsigned char r = this->randGenerator.generateByte();
+				const unsigned char g = this->randGenerator.generateByte();
+				const unsigned char b = this->randGenerator.generateByte();
 
 				this->draw(x, y, r, g, b);
 			}
@@ -64,4 +65,21 @@ void ExampleNoise::onUpdate(double elapsedTime) {
 
 	if(this->pixelSize != oldPixelSize)
 		this->setPixelSize(this->pixelSize);
+
+	const unsigned char oldRandAlgo = this->randGenerator.getAlgo();
+	unsigned char newRandAlgo = oldRandAlgo;
+
+	if(this->isKeyPressed(GLFW_KEY_SPACE))
+		++newRandAlgo;
+
+	if(this->isKeyRepeated(GLFW_KEY_SPACE))
+		++newRandAlgo;
+
+	newRandAlgo %= RAND_ALGOS ;
+
+	if(newRandAlgo != oldRandAlgo) {
+		this->randGenerator.setAlgo(static_cast<Rand::Algo>(newRandAlgo));
+
+		this->setDebugText(this->randGenerator.str());
+	}
 }
