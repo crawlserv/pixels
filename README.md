@@ -7,8 +7,7 @@ A playground for pixel-by-pixel software rendering.
 Draw all the pixels with chaning random colors each frame.
 
 ```c++
-// main.cpp
-
+// (main.cpp)
 #include "ExampleNoise.h"
 
 int main(int argc, char * argv[]) {
@@ -25,8 +24,7 @@ int main(int argc, char * argv[]) {
 Draw random rectangles and clip them accordingly.
 
 ```c++
-// main.cpp
-
+// (main.cpp)
 #include "ExampleRects.h"
 
 int main(int argc, char * argv[]) {
