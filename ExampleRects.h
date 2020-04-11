@@ -8,8 +8,6 @@
 #ifndef EXAMPLERECTS_H_
 #define EXAMPLERECTS_H_
 
-#define EXAMPLERECTS_NUM 1000
-
 #include "Engine.h"
 #include "Geometry.h"
 
