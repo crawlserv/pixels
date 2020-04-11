@@ -8,12 +8,16 @@
 #ifndef MAINWINDOW_H_
 #define MAINWINDOW_H_
 
+#define GL_GLEXT_PROTOTYPES
+
 #include <GLFW/glfw3.h>
 
 #include <chrono>		// std::chrono
 #include <functional>	// std::function, std::placeholders
 #include <stdexcept>	// std::runtime_error
 #include <string>		// std::string, std::to_string
+
+#include "Pixels.h"
 
 class MainWindow {
 public:
@@ -50,6 +54,11 @@ private:
 	void setProjection();
 	void clearKeys();
 
+	void initPixelBuffer();
+	void beginPixelBuffer();
+	void endPixelBuffer();
+	void clearPixelBuffer();
+
 	void onFramebuffer(int w, int h);
 	void onKey(int key, int action);
 
@@ -59,10 +68,14 @@ private:
 
 	bool glfwInitialized;
 	GLFWwindow * window;
+	unsigned int pixelBuffer;
+	size_t pixelBufferSize;
+	Pixels pixels;
 
 	std::string title;
 	int width;
 	int height;
+	unsigned char bytes;
 	int pixelWidth;
 	int pixelHeight;
 	bool clearBuffer;

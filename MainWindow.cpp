@@ -10,8 +10,11 @@
 MainWindow::MainWindow()
 		: glfwInitialized(false),
 		  window(nullptr),
+		  pixelBuffer(0),
+		  pixelBufferSize(0),
 		  width(0),
 		  height(0),
+		  bytes(3),
 		  pixelWidth(0),
 		  pixelHeight(0),
 		  clearBuffer(false),
@@ -32,6 +35,9 @@ MainWindow::MainWindow()
 }
 
 MainWindow::~MainWindow() {
+	// destroy pixel buffer if necessary
+	this->clearPixelBuffer();
+
 	// destroy window if necessary
 	if(this->window) {
 		glfwDestroyWindow(this->window);
@@ -75,10 +81,16 @@ void MainWindow::init(unsigned int w, unsigned int h, const std::string& title) 
 	glfwMakeContextCurrent(this->window);
 
 	// set additional OpenGL options
+	glDisable(GL_LIGHTING);
+	glShadeModel(GL_FLAT);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glClearColor(0., 0., 0., 1.);
 
 	// set projection
 	this->setProjection();
+
+	// create pixel buffer if necessary
+	this->initPixelBuffer();
 
 	// save starting time
 	this->lastTime = glfwGetTime();
@@ -108,12 +120,14 @@ bool MainWindow::update(updateFunction onUpdate) {
 	// poll for window events
 	glfwPollEvents();
 
-	// clear buffer
-	if(this->clearBuffer)
-		glClear(GL_COLOR_BUFFER_BIT);
+	// begin rendering to pixel buffer
+	this->beginPixelBuffer();
 
 	// update frame
 	onUpdate(this->getElapsedTime());
+
+	// end rendering to pixel buffer
+	this->endPixelBuffer();
 
 	// clear keys
 	this->clearKeys();
@@ -205,10 +219,38 @@ void MainWindow::setPixelSize(unsigned short size) {
 
 // write one pixel into the buffer
 void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b) {
-	glBegin(GL_POINTS);
-		glColor3ub(r, g, b);
-		glVertex2i(x * this->pixelSize + this->halfPixelSize, y * this->pixelSize + this->halfPixelSize);
-	glEnd();
+	if(this->pixelBuffer) {
+		const auto offsetX = x * this->pixelSize;
+		const auto offsetY = y * this->pixelSize;
+		short limitX = this->pixelSize;
+		auto limitY = this->pixelSize;
+
+		if(static_cast<int>(offsetX + limitX) > this->width)
+			limitX = this->width - offsetX;
+
+		if(static_cast<int>(offsetY + limitY) > this->height)
+			limitY = this->height - offsetY	;
+
+		for(unsigned short relX = 0; relX < limitX; ++relX)
+			for(unsigned short relY = 0; relY < limitY; ++relY)
+				this->pixels.set(
+						offsetX + relX,
+						offsetY + relY,
+						r,
+						g,
+						b
+				);
+	}
+	else {
+		glBegin(GL_POINTS);
+			glColor3ub(r, g, b);
+
+			glVertex2i(
+					x * this->pixelSize + this->halfPixelSize,
+					y * this->pixelSize + this->halfPixelSize
+			);
+		glEnd();
+	}
 }
 
 // set callback function for resize
@@ -265,10 +307,74 @@ void MainWindow::clearKeys() {
 	}
 }
 
+// initialize (and bind) pixel buffer
+void MainWindow::initPixelBuffer() {
+	// delete old pixel buffer if necessary
+	this->clearPixelBuffer();
+
+	// calculate new pixel buffer size
+	this->pixelBufferSize = this->width * this->height * this->bytes;
+
+	// generate pixel buffer
+	glGenBuffers(1, &(this->pixelBuffer));
+
+	// reserve memory for pixel buffer
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pixelBuffer);
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, this->pixelBufferSize, nullptr, GL_STREAM_DRAW);
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+}
+
+// bind pixel buffer
+void MainWindow::beginPixelBuffer() {
+	// bind buffer
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pixelBuffer);
+
+	// discard old content
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, this->pixelBufferSize, nullptr, GL_STREAM_DRAW);
+
+	// map pixels
+	this->pixels.map(
+			this->width,
+			this->height,
+			this->bytes,
+			static_cast<unsigned char *>(glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY))
+	);
+
+	if(!(this->pixels))
+		throw std::runtime_error("Could not map to pixel buffer");
+
+	this->pixels.fill(0, 0, 0);
+}
+
+// unbind pixel buffer and copy it to GPU
+void MainWindow::endPixelBuffer() {
+	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+
+	this->pixels.unmap();
+
+	glDrawPixels(this->width, this->height, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+}
+
+// clear pixel buffer
+void MainWindow::clearPixelBuffer() {
+	if(this->pixelBuffer) {
+		glDeleteBuffers(1, &(this->pixelBuffer));
+
+		this->pixelBuffer = 0;
+	}
+}
+
 // in-class callback for framebuffer creation and changes
 void MainWindow::onFramebuffer(int w, int h) {
+	if(this->width == w && this->height == h)
+		return;
+
 	this->width = w;
 	this->height = h;
+
+	this->initPixelBuffer();
 
 	this->setProjection();
 

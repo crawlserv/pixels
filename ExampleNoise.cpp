@@ -18,6 +18,7 @@ int ExampleNoise::run(int argc, char * argv[]) {
 	const int height = 600;
 
 	this->setPixelSize(this->pixelSize);
+
 	this->createMainWindow(width, height, name);
 
 	this->Engine::run();

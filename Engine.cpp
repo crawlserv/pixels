@@ -34,9 +34,6 @@ void Engine::createMainWindow(int width, int height, const std::string& title) {
 // run the engine
 void Engine::run() {
 	while(true) {
-		// update frame
-		this->onUpdate(this->window.getElapsedTime());
-
 		// update window
 		if(this->window.update(std::bind(&Engine::onUpdate, this, std::placeholders::_1))) {
 			// show framerate in title bar
