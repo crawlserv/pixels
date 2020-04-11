@@ -71,7 +71,7 @@ void ExampleRects::onUpdate(double elapsedTime) {
 	this->setDebugText("n=" + std::to_string(this->rects.size()));
 
 	// handle keys
-	unsigned short oldPixelSize = this->pixelSize;
+	const unsigned short oldPixelSize = this->pixelSize;
 
 	if(this->isKeyPressed(GLFW_KEY_UP) && this->pixelSize < 100)
 		++(this->pixelSize);

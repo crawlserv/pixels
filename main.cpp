@@ -5,8 +5,8 @@
  *      Author: ans
  */
 
-#include "ExampleNoise.h"
-//#include "ExampleRects.h"
+//#include "ExampleNoise.h"
+#include "ExampleRects.h"
 
 int main(int argc, char * argv[]) {
 	/*
@@ -14,7 +14,7 @@ int main(int argc, char * argv[]) {
 	 *
 	 * Press the UP and DOWN arrow keys to adjust the pixel size.
 	 */
-	return ExampleNoise().run(argc, argv);
+	//return ExampleNoise().run(argc, argv);
 
 	/*
 	 * EXAMPLE 2: render random rectangles
@@ -24,5 +24,5 @@ int main(int argc, char * argv[]) {
 	 * Press 'B' to switch border rendering.
 	 * Press the UP and DOWN arrow keys to adjust the pixel size.
 	 */
-	//return ExampleRects().run(argc, argv);
+	return ExampleRects().run(argc, argv);
 }

@@ -47,7 +47,7 @@ void ExampleNoise::onUpdate(double elapsedTime) {
 	}
 
 	// handle keys
-	unsigned short oldPixelSize = this->pixelSize;
+	const unsigned short oldPixelSize = this->pixelSize;
 
 	if(this->isKeyPressed(GLFW_KEY_UP) && this->pixelSize < 100)
 		++(this->pixelSize);
