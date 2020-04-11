@@ -170,7 +170,7 @@ namespace Geometry {
 						else
 							addIfLarger(rects, ref.x1, y_before, newRect.x2, newRect.y1, ref.c, min);
 					}
-					else if(newRect.x1 > ref.x1) {
+					else {
 						if(x_end_after)
 							addIfLarger(rects, newRect.x1, y_before, ref.x2, newRect.y1, ref.c, min);
 						else
