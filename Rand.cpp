@@ -169,7 +169,7 @@ double Rand::generateReal() {
 		return this->realDist(this->mt);
 
 	case RAND_ALGO_LEHMER32:
-		return this->realMin + static_cast<double>(this->lehmer32()) / 0x7FFFFFFF * (this->realMax - this->realMin);
+		return this->realMin + static_cast<double>(this->lehmer32()) / 0xFFFFFFFF * (this->realMax - this->realMin);
 	}
 
 	return 0;
