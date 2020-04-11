@@ -4,7 +4,7 @@ A playground for pixel-by-pixel software rendering.
 
 ## ExampleNoise
 
-Draw all the pixels with chaning random colors each frame.
+Draw all the pixels with random colors changing each frame.
 
 ```c++
 // (main.cpp)
