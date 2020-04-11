@@ -1,5 +1,5 @@
 /*
- * App.cpp
+ * ExampleNoise.cpp
  *
  *  Created on: Apr 10, 2020
  *      Author: ans

@@ -1,5 +1,5 @@
 /*
- * ExampleLines.h
+ * ExampleRects.h
  *
  *  Created on: Apr 10, 2020
  *      Author: ans

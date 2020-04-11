@@ -1,5 +1,5 @@
 /*
- * App.h
+ * ExampleNoise.h
  *
  *  Created on: Apr 10, 2020
  *      Author: ans
