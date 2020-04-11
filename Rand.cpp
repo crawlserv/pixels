@@ -185,7 +185,7 @@ bool Rand::generateBool() {
 		return this->byteDist(this->mt) - this->byteMin > this->byteHalf;
 
 	case RAND_ALGO_LEHMER32:
-		return this->lehmer32() > 0x7FFFFFFF / 2;
+		return this->lehmer32() > 0xFFFFFFFF / 2;
 	}
 
 	return false;
