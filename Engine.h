@@ -9,8 +9,10 @@
 #define ENGINE_H_
 
 #include <sstream>				// std::fixed, std::ostringstream
+#include <string>				// std::string
 
 #include "MainWindow.h"
+#include "PixelTest.h"
 
 class Engine {
 public:
@@ -19,6 +21,8 @@ public:
 
 	void setClearBuffer(bool clear);
 	void setPixelSize(unsigned char size);
+	void setPixelTest(const PixelTest& pixelTest);
+	void disablePixelTest();
 	void setDebugText(const std::string& string);
 
 	void createMainWindow(int width, int height, const std::string& title);
@@ -45,7 +49,9 @@ protected:
 
 private:
 	MainWindow window;
+	double oldTime;
 	std::string debug;
+	bool debugChanged;
 };
 
 #endif /* ENGINE_H_ */

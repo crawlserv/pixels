@@ -19,7 +19,16 @@ struct PixelTest {
 	FrameFunction frame;
 	TestFunction test;
 
-	operator bool() const { return init && test; }
+	/*
+	 * NOTE:	Debugging will turn the pixels
+	 * 			RED for wich the test fails,
+	 * 			instead of not drawing them.
+	 */
+	bool debugging;
+
+	PixelTest() : debugging(false) {}
+
+	operator bool() const { return init && frame && test; }
 };
 
 #endif /* PIXELTEST_H_ */

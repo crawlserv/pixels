@@ -8,7 +8,7 @@
 #include "Engine.h"
 
 // constructor and destructor stubs
-Engine::Engine() {}
+Engine::Engine() : oldTime(0.), debugChanged(false) {}
 Engine::~Engine() {}
 
 // set whether to clear the buffer every frame
@@ -21,9 +21,22 @@ void Engine::setPixelSize(unsigned char size) {
 	this->window.setPixelSize(size);
 }
 
+// enable pixel testing
+void Engine::setPixelTest(const PixelTest& pixelTest) {
+	this->window.setPixelTest(pixelTest);
+}
+
+// disable pixel testing
+void Engine::disablePixelTest() {
+	this->window.setPixelTest(PixelTest());
+}
+
 // set additional debugging information to be shown in the window title
 void Engine::setDebugText(const std::string& string) {
-	this->debug = string;
+	if(string != this->debug) {
+		this->debug = string;
+		this->debugChanged = true;
+	}
 }
 
 // create the main window
@@ -36,17 +49,24 @@ void Engine::run() {
 	while(true) {
 		// update window
 		if(this->window.update(std::bind(&Engine::onUpdate, this, std::placeholders::_1))) {
-			// show framerate in title bar
-			std::ostringstream oss;
+			const double newTime = this->window.getTime();
 
-			oss.precision(2);
+			if(this->debugChanged || newTime - this->oldTime > 0.25) {
+				// show framerate in title bar
+				std::ostringstream oss;
 
-			oss << std::fixed << this->window.getFPS() << "fps";
+				oss.precision(2);
 
-			if(!(this->debug.empty()))
-				oss << ", " << this->debug;
+				oss << std::fixed << this->window.getFPS() << "fps";
 
-			this->window.setDebugText(oss.str());
+				if(!(this->debug.empty()))
+					oss << ", " << this->debug;
+
+				this->window.setDebugText(oss.str());
+
+				this->oldTime = newTime;
+				this->debugChanged = false;
+			}
 		}
 		else
 			break;

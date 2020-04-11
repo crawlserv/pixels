@@ -221,7 +221,8 @@ void MainWindow::setPixelSize(unsigned short size) {
 void MainWindow::setPixelTest(const PixelTest& test) {
 	this->pixelTest = test;
 
-	this->pixelTest.init(this->width, this->height);
+	if(this->pixelTest)
+		this->pixelTest.init(this->width, this->height);
 }
 
 // write one pixel into the buffer
@@ -243,7 +244,7 @@ void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsig
 				const auto putX = offsetX + relX;
 				const auto putY = offsetY + relY;
 
-				if(this->pixelTest.test(putX, putY)) {
+				if(this->pixelTest.test(putX, putY))
 					this->pixels.set(
 							putX,
 							putY,
@@ -251,7 +252,14 @@ void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsig
 							g,
 							b
 					);
-				}
+				else if(this->pixelTest.debugging)
+					this->pixels.set(
+							putX,
+							putY,
+							255,
+							0,
+							0
+					);
 			}
 	else
 		for(unsigned short relX = 0; relX < limitX; ++relX)
