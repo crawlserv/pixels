@@ -9,7 +9,7 @@
 #define GEOMETRY_H_
 
 #include <deque>		// std::deque
-#include <stdexcept>	// std::runtime_error
+//#include <stdexcept>	// std::runtime_error
 #include <vector>		// std::vector
 
 namespace Geometry {
