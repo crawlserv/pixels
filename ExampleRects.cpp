@@ -100,10 +100,10 @@ void ExampleRects::onUpdate(double elapsedTime) {
 	if(this->isKeyRepeated(GLFW_KEY_ESCAPE))
 		this->rects.clear();
 
-	if(this->isKeyPressed(GLFW_KEY_B))
+	if(this->isKeyPressed(GLFW_KEY_SPACE))
 		this->renderBorders = !(this->renderBorders);
 
-	if(this->isKeyRepeated(GLFW_KEY_B))
+	if(this->isKeyRepeated(GLFW_KEY_SPACE))
 		this->renderBorders = !(this->renderBorders);
 }
 
