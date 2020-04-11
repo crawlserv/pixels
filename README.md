@@ -15,6 +15,7 @@ int main(int argc, char * argv[]) {
 }
 ```
 
+* Press SPACE to change the algorithm for creating pseudo-random numbers.
 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
 
 ![ExampleNoise](screens/noise.png)
