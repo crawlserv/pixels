@@ -146,10 +146,10 @@ void ExampleRects::add() {
 
 // render one rectangle
 void ExampleRects::render(int w, int h, const Rect& rect) {
-	const int absX1 = rect.x1 * w;
-	const int absY1 = rect.y1 * h;
-	const int absX2 = rect.x2 * w;
-	const int absY2 = rect.y2 * h;
+	const int absX1 = std::roundf(rect.x1 * w);
+	const int absY1 = std::roundf(rect.y1 * h);
+	const int absX2 = std::roundf(rect.x2 * w);
+	const int absY2 = std::roundf(rect.y2 * h);
 
 	if(this->renderBorders) {
 		static const unsigned char borderR = 0;
@@ -157,16 +157,27 @@ void ExampleRects::render(int w, int h, const Rect& rect) {
 		static const unsigned char borderB = 0;
 
 		for(int x = absX1; x < absX2; ++x) {
-			this->draw(x, absY1, borderR, borderG, borderB);
-			this->draw(x, absY2 - 1, borderR, borderG, borderB);
+			if(absY1 < h)
+				this->draw(x, absY1, borderR, borderG, borderB);
+
+			if(absY2 > 0)
+				this->draw(x, absY2 - 1, borderR, borderG, borderB);
 		}
 
 		for(int y = absY1; y < absY2; ++y) {
-			this->draw(absX1, y, borderR, borderG, borderB);
-			this->draw(absX2 - 1, y, borderR, borderG, borderB);
+			if(absX1 < w)
+				this->draw(absX1, y, borderR, borderG, borderB);
+
+			if(absX2 > 0)
+				this->draw(absX2 - 1, y, borderR, borderG, borderB);
 		}
 
-		this->fill(absX1 + 1, absY1 + 1, absX2 - 1, absY2 - 1, rect.c.r, rect.c.g, rect.c.b);
+		if(absX2 > 0 && absY2 > 0)
+			this->fill(absX1 + 1, absY1 + 1, absX2 - 1, absY2 - 1, rect.c.r, rect.c.g, rect.c.b);
+		else if(absX2 > 0)
+			this->fill(absX1 + 1, absY1 + 1, absX2 - 1, 0, rect.c.r, rect.c.g, rect.c.b);
+		else if(absY2 > 0)
+			this->fill(absX1 + 1, absY1 + 1, 0, absY2 - 1, rect.c.r, rect.c.g, rect.c.b);
 	}
 	else
 		this->fill(absX1, absY1, absX2, absY2, rect.c.r, rect.c.g, rect.c.b);

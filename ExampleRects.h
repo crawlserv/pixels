@@ -12,6 +12,7 @@
 #include "Geometry.h"
 
 #include <algorithm>// std::replace
+#include <cmath>	// std::roundf
 #include <cstdlib>	// EXIT_SUCCESS
 #include <random>	// std::mt19937, std::random_device, std::uniform_int_distribution
 #include <vector>	// std::vector

@@ -11,8 +11,6 @@
 #include <deque>		// std::deque
 #include <vector>		// std::vector
 
-#include <iostream>
-
 namespace Geometry {
 	// generic one-colored rectangle
 	template<typename T, typename C>
