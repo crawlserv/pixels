@@ -25,6 +25,7 @@ public:
 	};
 
 	Rand();
+	Rand(Algo algo);
 	virtual ~Rand();
 
 	void seed(unsigned int s);

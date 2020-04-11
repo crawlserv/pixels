@@ -28,6 +28,10 @@ Rand::Rand()
 	this->lehmer = defaultSeed;
 }
 
+Rand::Rand(Algo algo) : Rand() {
+	this->setAlgo(algo);
+}
+
 Rand::~Rand() {}
 
 void Rand::seed(unsigned int s) {
