@@ -12,7 +12,7 @@
 
 #include <cstdlib>		// std::rand
 #include <limits>		// std::numeric_limits
-#include <random>		// std::mt19937, std::random_device, std::uniform_int_distribution
+#include <random>		// std::mt19937, std::random_device, std::uniform_int_distribution, std::uniform_real_distribution
 #include <stdexcept>	// std::runtime_error
 #include <string>		// std::string
 
