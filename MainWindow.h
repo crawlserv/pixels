@@ -18,17 +18,18 @@
 #include <string>		// std::string, std::to_string
 
 #include "Pixels.h"
+#include "PixelTest.h"
 
 class MainWindow {
 public:
-	using resizeFunction = std::function<void(int, int)>;
-	using updateFunction = std::function<void(double)>;
+	using ResizeFunction = std::function<void(int, int)>;
+	using UpdateFunction = std::function<void(double)>;
 
 	MainWindow();
 	virtual ~MainWindow();
 
 	void init(unsigned int w, unsigned int h, const std::string& title);
-	bool update(updateFunction onUpdate);
+	bool update(UpdateFunction onUpdate);
 
 	int getWidth() const;
 	int getHeight() const;
@@ -43,9 +44,10 @@ public:
 
 	void setClearBuffer(bool clear);
 	void setPixelSize(unsigned short size);
+	void setPixelTest(const PixelTest& test);
 	void putPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b);
 
-	void setOnResize(resizeFunction callBack);
+	void setOnResize(ResizeFunction callBack);
 	void setDebugText(const std::string& text);
 
 	MainWindow(MainWindow&) = delete;
@@ -95,7 +97,8 @@ private:
 		bool repeated;
 	} keys[GLFW_KEY_LAST];
 
-	resizeFunction onResize;
+	ResizeFunction onResize;
+	PixelTest pixelTest;
 };
 
 #endif /* MAINWINDOW_H_ */

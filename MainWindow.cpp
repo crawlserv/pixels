@@ -86,18 +86,18 @@ void MainWindow::init(unsigned int w, unsigned int h, const std::string& title) 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glClearColor(0., 0., 0., 1.);
 
+	// initialize pixel buffer if necessary
+	this->initPixelBuffer();
+
 	// set projection
 	this->setProjection();
-
-	// create pixel buffer if necessary
-	this->initPixelBuffer();
 
 	// save starting time
 	this->lastTime = glfwGetTime();
 }
 
 // tick in window loop to process window events, return whether window has been closed
-bool MainWindow::update(updateFunction onUpdate) {
+bool MainWindow::update(UpdateFunction onUpdate) {
 	// check whether window has been closed
 	if(glfwWindowShouldClose(this->window))
 		return false;
@@ -217,6 +217,13 @@ void MainWindow::setPixelSize(unsigned short size) {
 	this->setProjection();
 }
 
+// set a test for pixels before drawing them
+void MainWindow::setPixelTest(const PixelTest& test) {
+	this->pixelTest = test;
+
+	this->pixelTest.init(this->width, this->height);
+}
+
 // write one pixel into the buffer
 void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b) {
 	const auto offsetX = x * this->pixelSize;
@@ -230,19 +237,36 @@ void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsig
 	if(static_cast<int>(offsetY + limitY) > this->height)
 		limitY = this->height - offsetY	;
 
-	for(unsigned short relX = 0; relX < limitX; ++relX)
-		for(unsigned short relY = 0; relY < limitY; ++relY)
-			this->pixels.set(
-					offsetX + relX,
-					offsetY + relY,
-					r,
-					g,
-					b
-			);
+	if(this->pixelTest)
+		for(unsigned short relX = 0; relX < limitX; ++relX)
+			for(unsigned short relY = 0; relY < limitY; ++relY) {
+				const auto putX = offsetX + relX;
+				const auto putY = offsetY + relY;
+
+				if(this->pixelTest.test(putX, putY)) {
+					this->pixels.set(
+							putX,
+							putY,
+							r,
+							g,
+							b
+					);
+				}
+			}
+	else
+		for(unsigned short relX = 0; relX < limitX; ++relX)
+			for(unsigned short relY = 0; relY < limitY; ++relY)
+				this->pixels.set(
+						offsetX + relX,
+						offsetY + relY,
+						r,
+						g,
+						b
+				);
 }
 
 // set callback function for resize
-void MainWindow::setOnResize(resizeFunction callBack) {
+void MainWindow::setOnResize(ResizeFunction callBack) {
 	this->onResize = callBack;
 }
 
@@ -300,6 +324,10 @@ void MainWindow::initPixelBuffer() {
 	// delete old pixel buffer if necessary
 	this->clearPixelBuffer();
 
+	// initialize or reset pixel test
+	if(this->pixelTest)
+		this->pixelTest.init(this->width, this->height);
+
 	// calculate new pixel buffer size
 	this->pixelBufferSize = this->width * this->height * this->bytes;
 
@@ -318,10 +346,14 @@ void MainWindow::initPixelBuffer() {
 
 // bind pixel buffer
 void MainWindow::beginPixelBuffer() {
+	// notify pixel test of coming frame
+	if(this->pixelTest)
+		this->pixelTest.frame();
+
 	// bind buffer
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pixelBuffer);
 
-	// discard old content
+	// discard content (do not wait for old operations to be finished)
 	glBufferData(GL_PIXEL_UNPACK_BUFFER, this->pixelBufferSize, nullptr, GL_STREAM_DRAW);
 
 	// map pixels
@@ -335,7 +367,9 @@ void MainWindow::beginPixelBuffer() {
 	if(!(this->pixels))
 		throw std::runtime_error("Could not map to pixel buffer");
 
-	this->pixels.fill(0, 0, 0);
+	// clear pixel buffer if necessary
+	if(this->clearBuffer)
+		this->pixels.fill(0, 0, 0);
 }
 
 // unbind pixel buffer and copy it to GPU
