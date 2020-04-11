@@ -9,8 +9,9 @@
 #define GEOMETRY_H_
 
 #include <deque>		// std::deque
-//#include <stdexcept>	// std::runtime_error
 #include <vector>		// std::vector
+
+#include <iostream>
 
 namespace Geometry {
 	// generic one-colored rectangle
@@ -23,11 +24,7 @@ namespace Geometry {
 		C c;
 
 		Rectangle() : x1(0), y1(0), x2(0), y2(0), c() {}
-		Rectangle(T _x1, T _y1, T _x2, T _y2, C _c) : x1(_x1), y1(_y1), x2(_x2), y2(_y2), c(_c) {
-/*			if(x2 < x1 || y2 < y1)
-				throw std::runtime_error("Invalid rectangle");
-*/
-		}
+		Rectangle(T _x1, T _y1, T _x2, T _y2, C _c) : x1(_x1), y1(_y1), x2(_x2), y2(_y2), c(_c) {}
 
 		T w() const { return x2 - x1; }
 		T h() const { return y2 - y1; }
@@ -167,13 +164,37 @@ namespace Geometry {
 						addIfLarger(rects, newRect.x2, ref.y1, x_after, ref.y2, ref.c, min);
 				}
 
-				if(y_before)
+				if(y_before) {
 					// the X_MIDDLE part of Y_BEFORE
-					addIfLarger(rects, ref.x1, y_before, ref.x2, newRect.y1, ref.c, min);
+					if(x_begin_before) {
+						if(x_end_after)
+							addIfLarger(rects, ref.x1, y_before, ref.x2, newRect.y1, ref.c, min);
+						else
+							addIfLarger(rects, ref.x1, y_before, newRect.x2, newRect.y1, ref.c, min);
+					}
+					else if(newRect.x1 > ref.x1) {
+						if(x_end_after)
+							addIfLarger(rects, newRect.x1, y_before, ref.x2, newRect.y1, ref.c, min);
+						else
+							addIfLarger(rects, newRect.x1, y_before, newRect.x2, newRect.y1, ref.c, min);
+					}
+				}
 
-				if(y_after)
+				if(y_after) {
 					// the X_MIDDLE part of Y_AFTER
-					addIfLarger(rects, ref.x1, newRect.y2, ref.x2, y_after, ref.c, min);
+					if(x_begin_before) {
+						if(x_end_after)
+							addIfLarger(rects, ref.x1, newRect.y2, ref.x2, y_after, ref.c, min);
+						else
+							addIfLarger(rects, ref.x1, newRect.y2, newRect.x2, y_after, ref.c, min);
+					}
+					else {
+						if(x_end_after)
+							addIfLarger(rects, newRect.x1, newRect.y2, ref.x2, y_after, ref.c, min);
+						else
+							addIfLarger(rects, newRect.x1, newRect.y2, newRect.x2, y_after, ref.c, min);
+					}
+				}
 			}
 		}
 
