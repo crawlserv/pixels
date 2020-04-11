@@ -19,11 +19,11 @@ Rand::Rand()
 		  realMax(1.),
 		  realHalf(.5),
 		  mt(this->rd()),
-		  lehmer(0) {}
-
-Rand::~Rand() {
-
+		  lehmer(this->rd()) {
+	std::srand(this->rd());
 }
+
+Rand::~Rand() {}
 
 void Rand::seed(unsigned int s) {
 	switch(this->algo) {
