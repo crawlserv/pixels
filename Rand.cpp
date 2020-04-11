@@ -18,9 +18,8 @@ Rand::Rand()
 		  realMin(0.),
 		  realMax(1.),
 		  realHalf(.5),
-		  mt(this->rd()),
-		  lehmer(this->rd()) {
-	std::srand(this->rd());
+		  lehmer(0) {
+	this->seed(std::random_device()());
 }
 
 Rand::~Rand() {}

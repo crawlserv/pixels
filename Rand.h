@@ -55,7 +55,6 @@ private:
 	double realMax;
 	double realHalf;
 
-	std::random_device rd;
 	std::mt19937 mt;
 
 	std::uniform_int_distribution<unsigned char> byteDist;
