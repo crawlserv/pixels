@@ -77,8 +77,9 @@ void MainWindow::init(unsigned int w, unsigned int h, const std::string& title) 
 	// get size of framebuffer
 	glfwGetFramebufferSize(this->window, &(this->width), &(this->height));
 
-	// make OpenGL context current
+	// make OpenGL context current and disable vertical synchronization
 	glfwMakeContextCurrent(this->window);
+	glfwSwapInterval(0);
 
 	// set additional OpenGL options
 	glDisable(GL_LIGHTING);
