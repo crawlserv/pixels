@@ -39,3 +39,12 @@ int main(int argc, char * argv[]) {
 
 ![ExampleRects](screens/rects.png)
 
+## Requirements
+
+On Linux, the following libraries need to be installed and linked against.
+
+* [OpenGL](https://www.opengl.org/) (`libGL`)
+* [GLFW](https://www.glfw.org/) (`libglfw3`)
+* `libdl`
+* [X11](https://www.x.org/) (`libX11`)
+* a multi-threading library like POSIX Threads (`pthreads`)
