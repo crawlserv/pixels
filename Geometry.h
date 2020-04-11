@@ -8,8 +8,8 @@
 #ifndef GEOMETRY_H_
 #define GEOMETRY_H_
 
-#include <algorithm>	// std::sort
 #include <deque>		// std::deque
+#include <stdexcept>	// std::runtime_error
 #include <vector>		// std::vector
 
 namespace Geometry {
