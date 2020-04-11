@@ -58,10 +58,10 @@ void MainWindow::init(unsigned int w, unsigned int h, const std::string& title) 
 	// create window
 	this->window = glfwCreateWindow(w, h, title.c_str(), nullptr, nullptr);
 
-	this->title = title;
-
 	if(!(this->window))
 		throw std::runtime_error("glfwCreateWindow failed");
+
+	this->title = title;
 
 	// set additional window options
 	glfwSetWindowUserPointer(this->window, this);
