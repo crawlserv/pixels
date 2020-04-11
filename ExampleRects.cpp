@@ -10,9 +10,7 @@
 ExampleRects::ExampleRects()
 		: pixelTestW(0),
 		  pixelSize(2),
-		  mt(this->rd()),
-		  distReal(0.f, 1.f),
-		  distInt(0, 255),
+		  randomGenerator(Rand::RAND_ALGO_LEHMER32),
 		  renderBorders(false),
 		  testPixels(false) {}
 
@@ -125,15 +123,15 @@ void ExampleRects::add() {
 	Rect newRect;
 
 	while(newRect.w() < minSize || newRect.h() < minSize) {
-		newRect.x1 = this->distReal(this->mt);
-		newRect.y1 = this->distReal(this->mt);
-		newRect.x2 = this->distReal(this->mt);
-		newRect.y2 = this->distReal(this->mt);
+		newRect.x1 = this->randomGenerator.generateReal();
+		newRect.y1 = this->randomGenerator.generateReal();
+		newRect.x2 = this->randomGenerator.generateReal();
+		newRect.y2 = this->randomGenerator.generateReal();
 	}
 
-	newRect.c.r = this->distInt(this->mt);
-	newRect.c.g = this->distInt(this->mt);
-	newRect.c.b = this->distInt(this->mt);
+	newRect.c.r = this->randomGenerator.generateByte();
+	newRect.c.g = this->randomGenerator.generateByte();
+	newRect.c.b = this->randomGenerator.generateByte();
 
 	if(newRect.x1 > newRect.x2)
 		std::swap(newRect.x1, newRect.x2);

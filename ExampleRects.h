@@ -10,6 +10,7 @@
 
 #include "Engine.h"
 #include "Geometry.h"
+#include "Rand.h"
 
 #include <algorithm>// std::replace
 #include <cmath>	// std::roundf
@@ -50,10 +51,7 @@ private:
 	unsigned int pixelTestW;
 
 	unsigned short pixelSize;
-	std::random_device rd;
-	std::mt19937 mt;
-	std::uniform_real_distribution<float> distReal;
-	std::uniform_int_distribution<unsigned char> distInt;
+	Rand randomGenerator;
 
 	bool renderBorders;
 	bool testPixels;
