@@ -46,7 +46,7 @@ On Linux, the following libraries or their substitutes need to be installed and 
 * [OpenGL](https://www.opengl.org/) (`libGL`)
 * [GLFW](https://www.glfw.org/) (`libglfw3`)
 * [X11](https://www.x.org/) (`libX11`)
-* a multi-threading library like [POSIX Threads](https://en.wikipedia.org/wiki/POSIX_Threads) (`libpthread`)
+* [POSIX Threads](https://en.wikipedia.org/wiki/POSIX_Threads) (`libpthread`)
 * `libdl`
 
 Tested with `g++ (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0`.
