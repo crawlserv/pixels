@@ -55,7 +55,7 @@ namespace Geometry {
 				|| (r2.x1 >= r1.x1 && r2.x2 <= r1.x2))	// is [r2.x1; r2.x2] inside [r1.x1; r1.x2]?
 				&& ((r1.y1 > r2.y1 && r1.y1 < r2.y2)	// is r1.y1 inside [r2.y1; r2.y2]?
 				|| (r1.y2 > r2.y1 && r1.y2 < r2.y2)		// is r1.y2 inside [r2.y1; r2.y2]?
-				|| (r2.y1 >= r1.y1 && r2.y2 <= r1.y2));	// is [r2.y2; r2.y2] inside [r1.y1; r1.x2]?
+				|| (r2.y1 >= r1.y1 && r2.y2 <= r1.y2));	// is [r2.y1; r2.y2] inside [r1.y1; r1.y2]?
 	}
 
 	// add a rectangle and split the overlapping rectangles removing the overlapped parts
