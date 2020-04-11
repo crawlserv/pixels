@@ -311,12 +311,12 @@ void MainWindow::callbackError(int error, const char * description) {
 	);
 }
 
-// callback for framebuffer creation and changes
+// callback for framebuffer changes (use GLFW user pointer to jump into class)
 void MainWindow::callbackFramebuffer(GLFWwindow * window, int width, int height) {
 	static_cast<MainWindow *>(glfwGetWindowUserPointer(window))->onFramebuffer(width, height);
 }
 
-// callback for key event
+// callback for key event (use GLFW user pointer to jump into class)
 void MainWindow::callbackKey(GLFWwindow * window, int key, int scancode, int action, int mods) {
 	static_cast<MainWindow *>(glfwGetWindowUserPointer(window))->onKey(key, action);
 }
