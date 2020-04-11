@@ -14,9 +14,6 @@
 #include <functional>	// std::function, std::placeholders
 #include <stdexcept>	// std::runtime_error
 #include <string>		// std::string, std::to_string
-#include <thread>		// std::this_thread
-
-#include <iostream>
 
 class MainWindow {
 public:
