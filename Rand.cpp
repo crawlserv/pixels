@@ -19,7 +19,13 @@ Rand::Rand()
 		  realMax(1.),
 		  realHalf(.5),
 		  lehmer(0) {
-	this->seed(std::random_device()());
+	const auto defaultSeed = std::random_device()();
+
+	std::srand(defaultSeed);
+
+	this->mt.seed(defaultSeed);
+
+	this->lehmer = defaultSeed;
 }
 
 Rand::~Rand() {}
