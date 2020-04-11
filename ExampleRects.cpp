@@ -40,7 +40,9 @@ void ExampleRects::onUpdate(double elapsedTime) {
 	const int w = this->getWindowWidth();
 	const int h = this->getWindowHeight();
 
-	for(const auto& rect : this->rects) {
+	for(auto it = this->rects.rbegin(); it != this->rects.rend(); ++it) {
+		const auto& rect = *it;
+	//for(const auto& rect : this->rects) {
 		const int absX1 = rect.x1 * w;
 		const int absY1 = rect.y1 * h;
 		const int absX2 = rect.x2 * w;
