@@ -12,11 +12,12 @@
 #include "Geometry.h"
 #include "Rand.h"
 
-#include <algorithm>// std::replace
-#include <cmath>	// std::roundf
-#include <cstdlib>	// EXIT_SUCCESS
-#include <random>	// std::mt19937, std::random_device, std::uniform_int_distribution
-#include <vector>	// std::vector
+#include <cmath>		// std::roundf
+#include <cstdlib>		// EXIT_SUCCESS
+#include <functional>	// std::bind, std::placeholders
+#include <string>		// std::string, std::to_string
+#include <utility>		// std::swap
+#include <vector>		// std::vector
 
 class ExampleRects : Engine {
 	template<typename T>
