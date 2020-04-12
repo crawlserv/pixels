@@ -6,7 +6,8 @@
  */
 
 //#include "ExampleNoise.h"
-#include "ExampleRects.h"
+//#include "ExampleRects.h"
+#include "ExampleSound.h"
 
 int main(int argc, char * argv[]) {
 	/*
@@ -26,5 +27,16 @@ int main(int argc, char * argv[]) {
 	 * Press TAB to test for and debug overlapping pixels.
 	 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
 	 */
-	return ExampleRects().run(argc, argv);
+	//return ExampleRects().run(argc, argv);
+
+	/*
+	 * EXAMPLE 3: render and output random sound waves.
+	 *
+	 * Press ENTER to add a random sine sound wave.
+	 * Press SPACE to add a random square sound wave.
+	 * Press TAB to add a random triangle sound wave.
+	 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
+	 * Press the RIGHT and LEFT arrow keys to adjust the resolution of the sound wave.
+	 */
+	return ExampleSound().run(argc, argv);
 }

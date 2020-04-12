@@ -41,6 +41,25 @@ int main(int argc, char * argv[]) {
 
 ![ExampleRects](screens/rects.png)
 
+## ExampleSound
+
+```c++
+// (main.cpp)
+#include "ExampleSound.h"
+
+int main(int argc, char * argv[]) {
+  return ExampleSound().run(argc, argv);
+}
+```
+
+* Press ENTER to add a random sine sound wave.
+* Press SPACE to add a random square sound wave.
+* Press TAB to add a random triangle sound wave.
+* Press the UP and DOWN arrow keys to adjust the 'pixel' size.
+* Press the RIGHT and LEFT arrow keys to adjust the resolution of the sound wave.
+
+![ExampleSound](screens/sound.png)
+
 ## Requirements
 
 On Linux, the following libraries or their substitutes need to be installed and linked against:
@@ -50,5 +69,9 @@ On Linux, the following libraries or their substitutes need to be installed and 
 * [X11](https://www.x.org/) (`libX11`)
 * [POSIX Threads](https://en.wikipedia.org/wiki/POSIX_Threads) (`libpthread`)
 * `libdl`
+
+For using `Sound.h` and `Sound.cpp` you additionally need:
+
+* [libsoundio](http://libsound.io/) (`libsoundio`)
 
 Tested with `g++ (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0`.
