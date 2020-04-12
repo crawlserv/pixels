@@ -9,9 +9,11 @@
 
 #include <stdexcept>	// std::runtime_error
 
+// constructor and destructor
 Pixels::Pixels() : width(0), height(0), bytes(0), pixels(nullptr) {}
 Pixels::~Pixels() { this->pixels = nullptr; }
 
+// set pointer to the mapped pixels (ptr), as well as their total width (w), height (h) and bytes per pixel (b)
 void Pixels::map(int w, int h, unsigned char b, unsigned char * ptr) {
 	this->width = w;
 	this->height = h;
@@ -19,6 +21,7 @@ void Pixels::map(int w, int h, unsigned char b, unsigned char * ptr) {
 	this->pixels = ptr;
 }
 
+// fill all the mapped pixel with one color (r, g, b)
 void Pixels::fill(unsigned char r, unsigned char g, unsigned char b) {
 	for(auto x = 0; x < this->width; ++x)
 		for(auto y = 0; y < this->height; ++y) {
@@ -30,6 +33,7 @@ void Pixels::fill(unsigned char r, unsigned char g, unsigned char b) {
 		}
 }
 
+// set one of the mapped pixel (x, y) to the specified color (r, g, b)
 void Pixels::set(int x, int y, unsigned char r, unsigned char g, unsigned char b) {
 	if(x > this->width - 1)
 		throw std::runtime_error(std::to_string(x) + " > " + std::to_string(this->width - 1));
@@ -41,10 +45,12 @@ void Pixels::set(int x, int y, unsigned char r, unsigned char g, unsigned char b
 	this->pixels[offset + 2] = b;
 }
 
+// unset the pointer to the mapped pixels
 void Pixels::unmap() {
 	this->pixels = nullptr;
 }
 
+// check whether pixels have been mapped, i.e. a pointer to them has been set
 Pixels::operator bool() const {
 	return this->pixels != nullptr;
 }

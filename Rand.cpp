@@ -7,6 +7,7 @@
 
 #include "Rand.h"
 
+// constructor for using the default algorithm (or setting it later)
 Rand::Rand()
 		: algo(RAND_ALGO_STD_RAND),
 		  byteMin(0),
@@ -28,12 +29,15 @@ Rand::Rand()
 	this->lehmer = defaultSeed;
 }
 
+// constructor setting the algorithm
 Rand::Rand(Algo algo) : Rand() {
 	this->setAlgo(algo);
 }
 
+// destructor stub
 Rand::~Rand() {}
 
+// set the seed ONLY for the currently selected algorithm
 void Rand::seed(unsigned int s) {
 	switch(this->algo) {
 	case RAND_ALGO_STD_RAND:
@@ -53,7 +57,7 @@ void Rand::seed(unsigned int s) {
 	}
 }
 
-// set current algorithm
+// set the current algorithm
 void Rand::setAlgo(Algo value) {
 	if(value >= RAND_ALGOS)
 		throw std::runtime_error("Invalid pseudo-random generation algorithm: " + std::to_string(value));
@@ -61,12 +65,12 @@ void Rand::setAlgo(Algo value) {
 	this->algo = value;
 }
 
-// get current algorithm
+// get the current algorithm
 Rand::Algo Rand::getAlgo() const {
 	return this->algo;
 }
 
-// get name of the current algorithm
+// get the name of the current algorithm
 std::string Rand::str() const {
 	switch(this->algo) {
 	case RAND_ALGO_STD_RAND:

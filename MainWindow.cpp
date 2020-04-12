@@ -7,6 +7,7 @@
 
 #include "MainWindow.h"
 
+// constructor: set default values
 MainWindow::MainWindow()
 		: glfwInitialized(false),
 		  window(nullptr),
@@ -34,6 +35,7 @@ MainWindow::MainWindow()
 	glfwSetErrorCallback(MainWindow::callbackError);
 }
 
+// destructor
 MainWindow::~MainWindow() {
 	// destroy pixel buffer if necessary
 	this->clearPixelBuffer();
