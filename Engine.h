@@ -37,6 +37,7 @@ public:
 protected:
 	int getWindowWidth() const;
 	int getWindowHeight() const;
+	double getTime() const;
 
 	void clip(int& x, int& y);
 	void draw(int x, int y, unsigned char r, unsigned char g, unsigned char b);

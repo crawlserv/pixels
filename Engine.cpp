@@ -81,6 +81,10 @@ int Engine::getWindowHeight() const {
 	return this->window.getHeight();
 }
 
+double Engine::getTime() const {
+	return this->window.getTime();
+}
+
 void Engine::clip(int& x, int& y) {
 	if(x < 0)
 		x = 0;
