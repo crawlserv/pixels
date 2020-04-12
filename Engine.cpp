@@ -46,6 +46,8 @@ void Engine::createMainWindow(int width, int height, const std::string& title) {
 
 // run the engine
 void Engine::run() {
+	this->onCreate();
+
 	while(true) {
 		// update window
 		if(this->window.update(std::bind(&Engine::onUpdate, this, std::placeholders::_1))) {
@@ -71,6 +73,8 @@ void Engine::run() {
 		else
 			break;
 	}
+
+	this->onDestroy();
 }
 
 int Engine::getWindowWidth() const {
