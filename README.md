@@ -1,6 +1,6 @@
 # pixels
 
-A playground for pixel-by-pixel software rendering.
+A playground for pixel-by-pixel software rendering and simple sound synthesis.
 
 ## ExampleNoise
 
