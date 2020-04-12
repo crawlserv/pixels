@@ -80,6 +80,7 @@ private:
 	std::atomic<bool> running;
 	std::thread soundThread;
 	double secondsOffset;
+	double secondsPerFrame;
 
 	SoundIo * soundIo;
 	SoundIoDevice * soundIoOutputDevice;

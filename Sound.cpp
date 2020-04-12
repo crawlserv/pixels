@@ -13,6 +13,7 @@ Sound::Sound()
 		  connected(false),
 		  running(false),
 		  secondsOffset(0.),
+		  secondsPerFrame(0.),
 		  soundIo(nullptr),
 		  soundIoOutputDevice(nullptr),
 		  soundIoOutStream(nullptr),
@@ -291,6 +292,9 @@ void Sound::threadInit() {
 
 		return;
 	}
+
+	// calculate the number of seconds per sample
+	this->secondsPerFrame = 1.f / this->soundIoOutStream->sample_rate;
 }
 
 // clear thread-related resources
@@ -346,7 +350,6 @@ void Sound::onBackendDisconnected(int error) {
 // write to the sound output device using the provided callback function
 void Sound::onWrite(int frameCountMin, int frameCountMax) {
 	const auto * pointerToLayout = &(this->soundIoOutStream->layout);
-	const double secondsPerFrame = 1.f / this->soundIoOutStream->sample_rate;
 	SoundIoChannelArea * pointerToAreas = nullptr;
 
 	if(frameCountMin < 0)
@@ -378,7 +381,7 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 
 		for(auto frame = 0; frame < frameCount; ++frame) {
 			// get sample from callback function
-			const double sample = this->output(this->secondsOffset + frame * secondsPerFrame);
+			const double sample = this->output(this->secondsOffset + frame * this->secondsPerFrame);
 
 			for(auto channel = 0; channel < pointerToLayout->channel_count; ++channel) {
 				this->write(pointerToAreas[channel].ptr, sample);
@@ -387,7 +390,7 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 			}
 		}
 
-		this->secondsOffset += secondsPerFrame * frameCount;
+		this->secondsOffset += this->secondsPerFrame * frameCount;
 
 		const auto endError = soundio_outstream_end_write(this->soundIoOutStream);
 
