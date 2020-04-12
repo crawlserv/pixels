@@ -43,6 +43,8 @@ int main(int argc, char * argv[]) {
 
 ## ExampleSound
 
+Play and draw semi-random sound waves.
+
 ```c++
 // (main.cpp)
 #include "ExampleSound.h"
