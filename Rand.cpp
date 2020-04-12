@@ -59,7 +59,7 @@ void Rand::seed(unsigned int s) {
 
 // set the current algorithm
 void Rand::setAlgo(Algo value) {
-	if(value >= RAND_ALGOS)
+	if(value >= RAND_ALGO_NUM)
 		throw std::runtime_error("Invalid pseudo-random generation algorithm: " + std::to_string(value));
 
 	this->algo = value;

@@ -30,8 +30,9 @@ ExampleSound::~ExampleSound() {}
 int ExampleSound::run(int argc, char * argv[]) {
 	// setup the engine
 	const std::string name("sound");
-	const int width = 800;
-	const int height = 600;
+
+	constexpr int width = 800;
+	constexpr int height = 600;
 
 	this->setClearBuffer(true);
 	this->setPixelSize(this->pixelSize);
@@ -213,8 +214,9 @@ void ExampleSound::onDestroy() {
 // add a sound wave
 void ExampleSound::addSoundWave(SoundWave::Type type) {
 	// generate random pitch and length
-	const double octaveBase = 110.;
-	const double twelfthRootOf2 = std::pow(2., 1. / 12.);
+	constexpr double octaveBase = 110.;
+	constexpr double twelfthRootOf2 = std::pow(2., 1. / 12.);
+
 	const double frequency = octaveBase * std::pow(twelfthRootOf2, this->randomGenerator.generateByte());
 	const double length = this->randomGenerator.generateReal();
 	const double start = this->getTime();

@@ -18,6 +18,8 @@ SoundWave::~SoundWave() {}
 
 // get the sound wave value at the specified time
 double SoundWave::get(double time) const {
+	constexpr double squareMax = 0.7;
+
 	if(time > this->startTime + this->length)
 		return 0.;
 
@@ -31,9 +33,9 @@ double SoundWave::get(double time) const {
 	case SOUNDWAVE_SQUARE:
 		// generate square wave
 		if(std::sin(this->frequency * 2. * M_PI * time) > 0.)
-			return volume * SOUNDWAVE_SQUARE_MAX;
+			return volume * squareMax;
 		else
-			return -volume * SOUNDWAVE_SQUARE_MAX;
+			return -volume * squareMax;
 
 	case SOUNDWAVE_TRIANGLE:
 		// generate triangle wave

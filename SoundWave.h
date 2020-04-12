@@ -8,8 +8,6 @@
 #ifndef SOUNDWAVE_H_
 #define SOUNDWAVE_H_
 
-#define SOUNDWAVE_SQUARE_MAX 0.7
-
 #include <cmath>	// M_PI, std::asin, std::cos, std::sin
 
 // class representing an abstract sound wave that diminishes over time

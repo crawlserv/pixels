@@ -14,8 +14,9 @@ ExampleNoise::~ExampleNoise() {}
 // run the application
 int ExampleNoise::run(int argc, char * argv[]) {
 	const std::string name("noise");
-	const int width = 800;
-	const int height = 600;
+
+	constexpr int width = 800;
+	constexpr int height = 600;
 
 	this->setPixelSize(this->pixelSize);
 	this->setDebugText(this->randGenerator.str());
@@ -75,7 +76,7 @@ void ExampleNoise::onUpdate(double elapsedTime) {
 	if(this->isKeyRepeated(GLFW_KEY_SPACE))
 		++newRandAlgo;
 
-	newRandAlgo %= RAND_ALGOS ;
+	newRandAlgo %= RAND_ALGO_NUM;
 
 	if(newRandAlgo != oldRandAlgo) {
 		this->randGenerator.setAlgo(static_cast<Rand::Algo>(newRandAlgo));

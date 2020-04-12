@@ -19,8 +19,9 @@ ExampleRects::~ExampleRects() {}
 // run the application
 int ExampleRects::run(int argc, char * argv[]) {
 	const std::string name("rects");
-	const int width = 800;
-	const int height = 600;
+
+	constexpr int width = 800;
+	constexpr int height = 600;
 
 	this->setClearBuffer(true);
 	this->setPixelSize(this->pixelSize);
@@ -118,7 +119,7 @@ void ExampleRects::onUpdate(double elapsedTime) {
 
 // add one rectangle
 void ExampleRects::add() {
-	static const float minSize = 0.001f;
+	constexpr float minSize = 0.001f;
 
 	Rect newRect;
 
@@ -150,9 +151,9 @@ void ExampleRects::render(int w, int h, const Rect& rect) {
 	const int absY2 = std::roundf(rect.y2 * h);
 
 	if(this->renderBorders) {
-		static const unsigned char borderR = 0;
-		static const unsigned char borderG = 0;
-		static const unsigned char borderB = 0;
+		constexpr unsigned char borderR = 0;
+		constexpr unsigned char borderG = 0;
+		constexpr unsigned char borderB = 0;
 
 		for(int x = absX1; x < absX2; ++x) {
 			if(absY1 < h)
