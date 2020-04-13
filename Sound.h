@@ -48,6 +48,7 @@ public:
 	void setOutputStreamName(const std::string& streamName);
 	void setOutputSampleRate(unsigned int sampleRate);
 	void setOutputMaxFrames(unsigned int maxFrames);
+	void setOutputLatency(double latency);
 
 	void start(double startTimeInSeconds);
 	void stop();
@@ -92,6 +93,8 @@ private:
 	std::string outputDeviceName;
 	std::string outputStreamName;
 	int outputSampleRate;
+	int outputMaxFrames;
+	double outputLatency;
 
 	OutputFunction output;
 	WriteFunction write;

@@ -18,7 +18,7 @@ ExampleSound::ExampleSound()
 	this->randomGenerator.setRealLimits(0.1, 1.5);		// wave lengths between 0.1 and 1.5 seconds
 	this->randomGenerator.setByteLimits(0, 47);			// 48 tones over three octaves
 
-	// reserve memory for a thousand (simultaneous) sound waves
+	// reserve memory for up to a thousand (simultaneous) sound waves
 	this->soundWavesForMain.reserve(1000);
 	this->soundWavesForThread.reserve(1000);
 }
@@ -39,6 +39,7 @@ int ExampleSound::run(int argc, char * argv[]) {
 	this->createMainWindow(width, height, name);
 
 	// setup the sound system
+	this->soundSystem.setOutputStreamName(name);
 	this->soundSystem.setOutputFunction(
 			std::bind(
 					&ExampleSound::generateSound,
@@ -47,7 +48,6 @@ int ExampleSound::run(int argc, char * argv[]) {
 					true
 			)
 	);
-	this->soundSystem.setOutputStreamName(name);
 
 	// run the engine
 	this->Engine::run();
@@ -135,7 +135,7 @@ void ExampleSound::onUpdate(double elapsedTime) {
 		}
 	}
 
-	// show number of sound waves and current resolution
+	// show number of sound waves and current wave resolution
 	this->setDebugText(
 			"n="
 			+ std::to_string(this->soundWavesForMain.size())

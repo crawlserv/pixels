@@ -19,7 +19,9 @@ Sound::Sound()
 		  soundIoOutStream(nullptr),
 		  defaultOutputDeviceIndex(-1),
 		  outputDeviceIndex(-1),
-		  outputSampleRate(44100) {
+		  outputSampleRate(44100),
+		  outputMaxFrames(0),
+		  outputLatency(0.1) {
 	// create soundio context
 	this->soundIo = soundio_create();
 
@@ -154,9 +156,25 @@ void Sound::setOutputStreamName(const std::string& streamName) {
 	this->outputStreamName = streamName;
 }
 
-// set the sample rate (default: 44100, zero is device default)
+// set the sample rate (default: 44100, zero means device default)
 void Sound::setOutputSampleRate(unsigned int sampleRate) {
 	this->outputSampleRate = sampleRate;
+}
+
+// set the maximum amount of frames to output at once (default: 0, zero means device default)
+//	WARNING: Low numbers will lead to 'underflow' and a warning will be printed to std::cerr
+//			 that there has not been enough data to write to the output sound device !
+//			 Very low numbers will break the audio output completely !
+void Sound::setOutputMaxFrames(unsigned int maxFrames) {
+	this->outputMaxFrames = maxFrames;
+}
+
+// set the desired software latency for the sound output (in seconds, default: 0.1, zero means device default)
+//	WARNING: The device default might be a very high latency (e.g. 2s), better use the in-class default !
+//			 Very low numbers will lead to 'underflow' and a warning will be printed to std::cerr
+//			 that there has not been enough data to write to the output sound device !
+void Sound::setOutputLatency(double latency) {
+	this->outputLatency = latency;
 }
 
 // start the sound system in an extra thread
@@ -235,7 +253,9 @@ void Sound::threadInit() {
 
 	this->soundIoOutStream->write_callback = Sound::callbackWrite;
 	this->soundIoOutStream->underflow_callback = Sound::callbackUnderflow;
-	this->soundIoOutStream->software_latency = 0.1;
+
+	if(this->outputLatency > 0.)
+		this->soundIoOutStream->software_latency = this->outputLatency;
 
 	// choose output format
 	if(soundio_device_supports_format(this->soundIoOutputDevice, SoundIoFormatFloat64NE)) {
@@ -361,6 +381,13 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 	// write a decent number of frames
 	auto framesLeft = frameCountMax;
 
+	if(this->outputMaxFrames && framesLeft > this->outputMaxFrames && frameCountMin < framesLeft) {
+		if(this->outputMaxFrames > frameCountMin)
+			framesLeft = this->outputMaxFrames;
+		else
+			framesLeft = frameCountMin;
+	}
+
 	// loop through frames
 	while(framesLeft) {
 		auto frameCount = framesLeft;
@@ -408,7 +435,7 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 
 // buffer has underflow
 void Sound::onUnderflow() {
-	std::cerr << "WARNING: Not enough data to write to sound card." << std::endl;
+	std::cerr << "UNDERFLOW WARNING: Not enough data to write to the output sound device." << std::endl;
 }
 
 // delegate on devices changed event into the class
