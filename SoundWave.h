@@ -8,6 +8,8 @@
 #ifndef SOUNDWAVE_H_
 #define SOUNDWAVE_H_
 
+#include "Rand.h"
+
 #include <cmath>		// M_2_PI, M_PI, M_PI_2, std::asin, std::fmod, std::sin
 
 // class representing an abstract sound wave that diminishes over time
@@ -18,17 +20,18 @@ public:
 		SOUNDWAVE_SQUARE,
 		SOUNDWAVE_TRIANGLE,
 		SOUNDWAVE_SAWTOOTH,
-		SOUNDWAVE_SAWTOOTH_OPTIMIZED
+		SOUNDWAVE_SAWTOOTH_OPTIMIZED,
+		SOUNDWAVE_NOISE
 	};
 
-	SoundWave(Type type, double frequency, double length, double startTime);
+	SoundWave(Type type, double frequency, double length, double startTime, Rand * noiseGeneratorPointer = nullptr);
 	virtual ~SoundWave();
 
 	double get(double time) const;
 	bool done(double time) const;
 
-	void setWaveVolume(double volume) const;
-	void setAnalogSawToothN(double n) const;
+	void setWaveVolume(double volume);
+	void setAnalogSawToothN(unsigned int n);
 
 private:
 	Type type;
@@ -41,6 +44,9 @@ private:
 
 	// pre-calculated value for wave generation
 	double angularVelocity;
+
+	// pointer to pseudo-random number generator
+	Rand * noiseGeneratorPointer;
 
 	// additional properties (setting them is optional)
 	double waveVolume;

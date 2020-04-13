@@ -12,6 +12,7 @@ ExampleSound::ExampleSound()
 		: pixelSize(2),
 		  waveResolution(10),
 		  randomGenerator(Rand::RAND_ALGO_LEHMER32),
+		  noiseGenerator(Rand::RAND_ALGO_LEHMER32),
 		  lastClearTime(0.) {
 	// setup random generator
 	this->randomGenerator.setRealLimits(0.1, 1.5);		// wave lengths between 0.1 and 1.5 seconds
@@ -204,6 +205,12 @@ void ExampleSound::onUpdate(double elapsedTime) {
 	if(this->isKeyRepeated(GLFW_KEY_BACKSPACE))
 		this->addSoundWave(SoundWave::SOUNDWAVE_SAWTOOTH);
 
+	if(this->isKeyPressed(GLFW_KEY_N))
+		this->addSoundWave(SoundWave::SOUNDWAVE_NOISE);
+
+	if(this->isKeyRepeated(GLFW_KEY_N))
+		this->addSoundWave(SoundWave::SOUNDWAVE_NOISE);
+
 	if(this->isKeyPressed(GLFW_KEY_ESCAPE))
 		this->clearSoundWaves();
 
@@ -231,14 +238,19 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 	const double length = this->randomGenerator.generateReal();
 	const double start = this->getTime();
 
+	Rand * noiseGenerator = nullptr;
+
+	if(type == SoundWave::SOUNDWAVE_NOISE)
+		noiseGenerator = &(this->noiseGenerator);
+
 	// add sound wave to the main thread
-	this->soundWavesForMain.emplace_back(type, frequency, length, start);
+	this->soundWavesForMain.emplace_back(type, frequency, length, start, noiseGenerator);
 
 	// add sound wave to the sound thread
 	{
 		std::lock_guard<std::mutex> threadDataLock(this->lockSoundWavesForThread);
 
-		this->soundWavesForThread.emplace_back(type, frequency, length, start);
+		this->soundWavesForThread.emplace_back(type, frequency, length, start, noiseGenerator);
 	}
 }
 

@@ -58,6 +58,7 @@ int main(int argc, char * argv[]) {
 * Press SPACE to add a semi-random square sound wave.
 * Press TAB to add a semi-random triangle sound wave.
 * Press BACKSPACE to add a semi-random sawtooth sound wave.
+* Press N to add some semi-random noise.
 * Press ESC to clear all sound waves.
 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
 * Press the RIGHT and LEFT arrow keys to adjust the resolution of the rendered sound wave.

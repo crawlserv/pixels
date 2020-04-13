@@ -9,24 +9,30 @@
 
 #include <iostream>
 
-// constructor: set the properties of the sound wave and calculate some standard values
-SoundWave::SoundWave(Type type, double frequency, double length, double startTime)
+// constructor: set the properties of the sound wave and pre-calculate needed values
+SoundWave::SoundWave(Type type, double frequency, double length, double startTime, Rand * noiseGeneratorPointer)
 		: type(type),
 		  frequency(frequency),
 		  period(1. / frequency),
 		  length(length),
 		  startTime(startTime),
 		  angularVelocity(0.),
+		  noiseGeneratorPointer(noiseGeneratorPointer),
 		  waveVolume(1.),
 		  analogSawToothN(10) {
 	// set type-specific default volumes and precalculate angularVelocity if necessary
 	if(this->type == SOUNDWAVE_SAWTOOTH_OPTIMIZED)
 		this->waveVolume = 0.7;
-	else
-		this->angularVelocity = frequency * 2. * M_PI;
 
 	if(this->type == SOUNDWAVE_SQUARE)
 		this->waveVolume = 0.6;
+
+	if(this->type != SOUNDWAVE_SAWTOOTH_OPTIMIZED && this->type != SOUNDWAVE_NOISE)
+		this->angularVelocity = frequency * 2. * M_PI;
+
+	// change real distribution of noise Generator if necessary
+	if(this->noiseGeneratorPointer)
+		this->noiseGeneratorPointer->setRealLimits(-1., 1.);
 }
 
 // destructor stub
@@ -85,6 +91,10 @@ double SoundWave::get(double time) const {
 						* M_PI
 						* std::fmod(time, this->period) - M_PI_2
 				);
+
+	case SOUNDWAVE_NOISE:
+		if(this->noiseGeneratorPointer)
+			return volume * this->waveVolume * this->noiseGeneratorPointer->generateReal();
 	}
 
 	return 0.;
@@ -93,4 +103,21 @@ double SoundWave::get(double time) const {
 // get whether the sound wave has ended at the specified time
 bool SoundWave::done(double time) const {
 	return time > this->startTime + this->length;
+}
+
+// set the master volume of the wave
+//	NOTE: values outside [-1;1] will be clamped to avoid illegal output
+void SoundWave::setWaveVolume(double volume) {
+	if(volume > 1.)
+		this->waveVolume = 1.;
+	else if(volume < -1.)
+		this->waveVolume = -1.;
+	else
+		this->waveVolume = volume;
+}
+
+// set the N for analog sawtooth waves, i.e. how many sine waves will be added up for the wave
+//	NOTE: high values can lead to 'underflow' and break the sound output
+void SoundWave::setAnalogSawToothN(unsigned int n) {
+	this->analogSawToothN = n;
 }
