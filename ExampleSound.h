@@ -45,7 +45,8 @@ private:
 	unsigned short pixelSize;
 	unsigned short waveResolution;
 	Rand randomGenerator;
-	Rand noiseGenerator;
+	Rand noiseGeneratorMain;
+	Rand noiseGeneratorThread;
 	Sound soundSystem;
 
 	std::vector<SoundWave> soundWavesForThread;
