@@ -12,8 +12,7 @@ ExampleSound::ExampleSound()
 		: pixelSize(2),
 		  waveResolution(10),
 		  randomGenerator(Rand::RAND_ALGO_LEHMER32),
-		  lastClearTime(0.),
-		  test(false) {
+		  lastClearTime(0.) {
 	// setup random generator
 	this->randomGenerator.setRealLimits(0.1, 1.5);		// wave lengths between 0.1 and 1.5 seconds
 	this->randomGenerator.setByteLimits(0, 47);			// 48 tones over three octaves
@@ -192,13 +191,17 @@ void ExampleSound::onUpdate(double elapsedTime) {
 	if(this->isKeyRepeated(GLFW_KEY_TAB))
 		this->addSoundWave(SoundWave::SOUNDWAVE_TRIANGLE);
 
+	if(this->isKeyPressed(GLFW_KEY_BACKSPACE))
+		this->addSoundWave(SoundWave::SOUNDWAVE_SAWTOOTH);
+
+	if(this->isKeyRepeated(GLFW_KEY_BACKSPACE))
+		this->addSoundWave(SoundWave::SOUNDWAVE_SAWTOOTH);
+
 	if(this->isKeyPressed(GLFW_KEY_ESCAPE))
 		this->clearSoundWaves();
 
 	if(this->isKeyRepeated(GLFW_KEY_ESCAPE))
 		this->clearSoundWaves();
-
-	this->test = this->isKeyHeld(GLFW_KEY_T);
 }
 
 // clear resources
@@ -258,19 +261,22 @@ double ExampleSound::generateSound(double time, bool forThread) {
 
 // generate sound at the specified time from the specified source
 double ExampleSound::generateSoundFrom(double time, const std::vector<SoundWave>& from) {
+	constexpr double generalVolume = 0.75;
+	constexpr double maxVolume = 0.8;
+
 	if(from.empty())
 		return 0.;
 
 	double result = 0.;
 
 	for(const auto& wave : from)
-		result += 0.75 * wave.get(time);
+		result += generalVolume * wave.get(time);
 
-	if(result > 0.75)
-		result = 0.75;
+	if(result > maxVolume)
+		result = maxVolume;
 
-	if(result < -0.75)
-		result = -0.75;
+	if(result < - maxVolume)
+		result = - maxVolume;
 
 	return result;
 }

@@ -40,8 +40,6 @@ Sound::Sound()
 	this->soundIo->on_backend_disconnect = Sound::callbackBackendDisconnected;
 	this->soundIo->userdata = static_cast<void *>(this);
 
-	std::cout << "backend=" << this->getBackend() << std::endl;
-
 	// flush events
 	soundio_flush_events(this->soundIo);
 

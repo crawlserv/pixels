@@ -50,8 +50,6 @@ private:
 	std::mutex lockSoundWavesForThread;
 
 	double lastClearTime;
-
-	bool test;
 };
 
 #endif /* EXAMPLERECTS_H_ */
