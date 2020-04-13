@@ -101,7 +101,6 @@ void ExampleSound::onUpdate(double elapsedTime) {
 	const auto w = this->getWindowWidth();
 	const auto h = this->getWindowHeight();
 	const double res = static_cast<double>(this->waveResolution) / 1000.;
-
 	const double halfHeight = static_cast<double>(h) / 2;
 
 	for(int x = 0; x < w; ++x) {
@@ -197,7 +196,7 @@ void ExampleSound::onUpdate(double elapsedTime) {
 	 * 			and choppy sound when computing too many sawtooth waves in parallel
 	 * 			due to their very high calculation time involving multiple sinuses.
 	 * 			Adjust analogSawToothN in SoundWave::get() to change the necessary
-	 * 			computations per sample (analogSawToothN * std::sin(...)).
+	 * 			computations per sample (being analogSawToothN * std::sin(...)).
 	 */
 	if(this->isKeyPressed(GLFW_KEY_BACKSPACE))
 		this->addSoundWave(SoundWave::SOUNDWAVE_SAWTOOTH);
@@ -224,7 +223,7 @@ void ExampleSound::onDestroy() {
 
 // add a sound wave
 void ExampleSound::addSoundWave(SoundWave::Type type) {
-	// generate random pitch and length
+	// generate semi-random frequency and length
 	constexpr double octaveBase = 110.;
 	constexpr double twelfthRootOf2 = std::pow(2., 1. / 12.);
 
