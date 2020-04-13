@@ -17,9 +17,9 @@ ExampleSound::ExampleSound()
 	this->randomGenerator.setRealLimits(0.1, 1.5);		// wave lengths between 0.1 and 1.5 seconds
 	this->randomGenerator.setByteLimits(0, 47);			// 48 tones over three octaves
 
-	// reserve memory for up to a thousand (simultaneous) sound waves
-	this->soundWavesForMain.reserve(1000);
-	this->soundWavesForThread.reserve(1000);
+	// reserve memory for up to a hundred (simultaneous) sound waves
+	this->soundWavesForMain.reserve(100);
+	this->soundWavesForThread.reserve(100);
 }
 
 // destructor
@@ -191,6 +191,14 @@ void ExampleSound::onUpdate(double elapsedTime) {
 	if(this->isKeyRepeated(GLFW_KEY_TAB))
 		this->addSoundWave(SoundWave::SOUNDWAVE_TRIANGLE);
 
+	/*
+	 * NOTE:	It might be better to use SoundWave::SOUNDWAVE_SAWTOOTH_OPTIMIZED,
+	 * 			for sawtooth waves. Otherwise there might be 'underflow' warnings
+	 * 			and choppy sound when computing too many sawtooth waves in parallel
+	 * 			due to their very high calculation time involving multiple sinuses.
+	 * 			Adjust analogSawToothN in SoundWave::get() to change the necessary
+	 * 			computations per sample (analogSawToothN * std::sin(...)).
+	 */
 	if(this->isKeyPressed(GLFW_KEY_BACKSPACE))
 		this->addSoundWave(SoundWave::SOUNDWAVE_SAWTOOTH);
 

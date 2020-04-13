@@ -26,6 +26,7 @@ SoundWave::~SoundWave() {}
 double SoundWave::get(double time) const {
 	constexpr double squareMax = 0.6;
 	constexpr double sawToothMax = 0.7;
+	constexpr double analogSawToothN = 25;
 
 	if(time > this->startTime + this->length)
 		return 0.;
@@ -53,7 +54,7 @@ double SoundWave::get(double time) const {
 		// generate "smooth" sawtooth wave
 		double result = 0.0;
 
-		for(double n = 1.0; n < 50.; n++)
+		for(double n = 1.0; n < analogSawToothN; n++)
 			result -= (std::sin(n * this->angularVelocity * time)) / n;
 
 		return volume * sawToothMax * result * M_2_PI;
