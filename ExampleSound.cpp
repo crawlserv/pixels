@@ -12,7 +12,8 @@ ExampleSound::ExampleSound()
 		: pixelSize(2),
 		  waveResolution(10),
 		  randomGenerator(Rand::RAND_ALGO_LEHMER32),
-		  noiseGenerator(Rand::RAND_ALGO_LEHMER32),
+		  noiseGeneratorMain(Rand::RAND_ALGO_LEHMER32),
+		  noiseGeneratorThread(Rand::RAND_ALGO_LEHMER32),
 		  lastClearTime(0.) {
 	// setup random generator
 	this->randomGenerator.setRealLimits(0.1, 1.5);		// wave lengths between 0.1 and 1.5 seconds
@@ -264,10 +265,13 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 	const double length = this->randomGenerator.generateReal();
 	const double start = this->getTime();
 
-	Rand * noiseGenerator = nullptr;
+	Rand * noiseGeneratorMainPointer = nullptr;
+	Rand * noiseGeneratorThreadPointer = nullptr;
 
-	if(type == SoundWave::SOUNDWAVE_NOISE)
-		noiseGenerator = &(this->noiseGenerator);
+	if(type == SoundWave::SOUNDWAVE_NOISE) {
+		noiseGeneratorMainPointer = &(this->noiseGeneratorMain);
+		noiseGeneratorThreadPointer = &(this->noiseGeneratorThread);
+	}
 
 	/*
 	 * NOTE:	Noise will be generated on-the-fly and therefore won't be rendered correctly,
@@ -276,13 +280,19 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 	 */
 
 	// add sound wave to the main thread
-	this->soundWavesForMain.emplace_back(type, frequency, length, start, noiseGenerator);
+	this->soundWavesForMain.emplace_back(
+			SoundWave::Properties(type, frequency, length, start),
+			noiseGeneratorMainPointer
+	);
 
 	// add sound wave to the sound thread
 	{
 		std::lock_guard<std::mutex> threadDataLock(this->lockSoundWavesForThread);
 
-		this->soundWavesForThread.emplace_back(type, frequency, length, start, noiseGenerator);
+		this->soundWavesForThread.emplace_back(
+				SoundWave::Properties(type, frequency, length, start),
+				noiseGeneratorThreadPointer
+		);
 	}
 }
 
