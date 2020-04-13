@@ -8,7 +8,7 @@
 #ifndef SOUNDWAVE_H_
 #define SOUNDWAVE_H_
 
-#include <cmath>	// M_2_PI, M_PI, M_PI_2, std::asin, std::fmod, std::sin
+#include <cmath>		// M_2_PI, M_PI, M_PI_2, std::asin, std::fmod, std::sin
 
 // class representing an abstract sound wave that diminishes over time
 class SoundWave {
@@ -27,15 +27,24 @@ public:
 	double get(double time) const;
 	bool done(double time) const;
 
+	void setWaveVolume(double volume) const;
+	void setAnalogSawToothN(double n) const;
+
 private:
 	Type type;
 
+	// initial values
 	double frequency;
 	double period;
 	double length;
 	double startTime;
+
+	// pre-calculated value for wave generation
 	double angularVelocity;
-	double halfAngularVelocity;
+
+	// additional properties (setting them is optional)
+	double waveVolume;
+	double analogSawToothN;
 };
 
 #endif /* SOUNDWAVE_H_ */
