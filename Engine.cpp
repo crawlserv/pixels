@@ -77,18 +77,22 @@ void Engine::run() {
 	this->onDestroy();
 }
 
+// get the window width
 int Engine::getWindowWidth() const {
 	return this->window.getWidth();
 }
 
+// get the window height
 int Engine::getWindowHeight() const {
 	return this->window.getHeight();
 }
 
+// get the current (run)time
 double Engine::getTime() const {
 	return this->window.getTime();
 }
 
+// clip x and y into window space
 void Engine::clip(int& x, int& y) {
 	if(x < 0)
 		x = 0;
@@ -101,10 +105,12 @@ void Engine::clip(int& x, int& y) {
 		y = this->window.getHeight();
 }
 
+// draw a pixel at the specified window position (x, y) with the specified color (r, g, b)
 void Engine::draw(int x, int y, unsigned char r, unsigned char g, unsigned char b) {
 	this->window.putPixel(x, y, r, g, b);
 }
 
+// fill pixels between the specified window positions (x1, y1 and x2, y2) with the specified color (r, g, b)
 void Engine::fill(int x1, int y1, int x2, int y2, unsigned char r, unsigned char g, unsigned char b) {
 	this->clip(x1, y1);
 	this->clip(x2, y2);
@@ -114,18 +120,23 @@ void Engine::fill(int x1, int y1, int x2, int y2, unsigned char r, unsigned char
 			this->draw(x, y, r, g, b);
 }
 
+// check whether a key has been pressed THIS frame
 bool Engine::isKeyPressed(unsigned int code) const {
 	return this->window.isKeyPressed(code);
 }
 
+// check whether a key is held (works continiously over multiple frames)
 bool Engine::isKeyHeld(unsigned int code) const {
 	return this->window.isKeyHeld(code);
 }
 
+// check whether a key has been released THIS frame
 bool Engine::isKeyReleased(unsigned int code) const {
 	return this->window.isKeyReleased(code);
 }
 
+// check whether a key has been held long enough for being repeated
+//	NOTE:	keys might not be repeated when other keys have been pressed in the meantime
 bool Engine::isKeyRepeated(unsigned int code) const {
 	return this->window.isKeyRepeated(code);
 }
