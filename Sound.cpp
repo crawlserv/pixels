@@ -11,6 +11,7 @@
 Sound::Sound()
 		: started(false),
 		  connected(false),
+		  initialized(false),
 		  running(false),
 		  secondsOffset(0.),
 		  secondsPerFrame(0.),
@@ -20,6 +21,7 @@ Sound::Sound()
 		  defaultOutputDeviceIndex(-1),
 		  outputDeviceIndex(-1),
 		  outputSampleRate(44100),
+		  outputChannels(0),
 		  outputMaxFrames(0),
 		  outputLatency(0.1) {
 	// create soundio context
@@ -113,7 +115,7 @@ std::vector<Sound::Device> Sound::listOutputDevices() const {
 	return result;
 }
 
-// get the index of the default output device
+// get the index of the default output device or -1 if none is available
 int Sound::getDefaultOutputDeviceIndex() const {
 	return this->defaultOutputDeviceIndex;
 }
@@ -133,6 +135,9 @@ std::string Sound::getOutputDeviceName() const {
 
 // get the name of the underlying backend used for communicating with the sound device(s)
 std::string Sound::getBackend() const {
+	if(!(this->soundIo))
+		throw std::runtime_error("Sound::getBackend(): soundIo == nullptr");
+
 	switch(this->soundIo->current_backend) {
 	case SoundIoBackendNone:
 		return "<none>";
@@ -160,7 +165,7 @@ std::string Sound::getBackend() const {
 }
 
 // set the current output device by its index (e.g. when received from Sound::listOutputDevices)
-void Sound::setOutputDeviceByIndex(int index) {
+void Sound::setOutputDeviceByIndex(unsigned int index) {
 	this->setOutputDevice(index);
 }
 
@@ -184,9 +189,14 @@ void Sound::setOutputStreamName(const std::string& streamName) {
 	this->outputStreamName = streamName;
 }
 
-// set the sample rate (default: 44100, zero means device default)
+// set the sample rate (default: 44100, zero means device/library default)
 void Sound::setOutputSampleRate(unsigned int sampleRate) {
 	this->outputSampleRate = sampleRate;
+}
+
+// set the number of channels (default: 0, zero means device/library default)
+void Sound::setOutputChannels(unsigned int channels) {
+	this->outputChannels = channels;
 }
 
 // set the maximum amount of frames to output at once (default: 0, zero means device default)
@@ -230,6 +240,239 @@ void Sound::stop() {
 
 		if(this->soundThread.joinable())
 			this->soundThread.join();
+	}
+}
+
+// check whether sound system has been succesfully started
+bool Sound::isStarted() const {
+	return this->initialized;
+}
+
+// get the actual output sample rate chosen by the device
+// 	NOTE:	The sound system need to be completely started before you can use this function.
+//			You can use Sound::isStarted() to wait until it is ready.
+int Sound::getOutputSampleRate() const {
+	if(!(this->soundIoOutStream)) {
+		std::cerr
+				<<	"WARNING: Sound::getChannelType(): "
+					"Sound system needs to be started before getting the type of a channel"
+				<<	std::endl;
+
+		return 0;
+	}
+
+	return this->soundIoOutStream->sample_rate;
+}
+
+// get the name of the currently selected layout
+// 	NOTE:	The sound system need to be completely started before you can use this function.
+//			You can use Sound::isStarted() to wait until it is ready.
+std::string Sound::getOutputLayoutName() const {
+	if(!(this->soundIoOutStream)) {
+		std::cerr
+				<<	"WARNING: Sound::getChannelType(): "
+					"Sound system needs to be started before getting the type of a channel"
+				<<	std::endl;
+
+		return 0;
+	}
+
+	return this->soundIoOutStream->layout.name;
+}
+
+// get the number of output channels
+// 	NOTE:	The sound system need to be completely started before you can use this function.
+//			You can use Sound::isStarted() to wait until it is ready.
+int Sound::getOutputChannels() const {
+	if(!(this->soundIoOutStream)) {
+		std::cerr
+				<<	"WARNING: Sound::getOutputChannelType(): "
+					"Sound system needs to be started before getting the type of a channel"
+				<<	std::endl;
+
+		return 0;
+	}
+
+	return this->soundIoOutStream->layout.channel_count;
+}
+
+// get the actual software latency (might return zero for low latencies depending on the device)
+// 	NOTE:	The sound system need to be completely started before you can use this function.
+//			You can use Sound::isStarted() to wait until it is ready.
+double Sound::getOutputLatency() const {
+	if(!(this->soundIoOutStream)) {
+		std::cerr
+				<<	"WARNING: Sound::getOutputChannelType(): "
+					"Sound system needs to be started before getting the type of a channel"
+				<<	std::endl;
+
+		return 0.;
+	}
+
+	return this->soundIoOutStream->software_latency;
+}
+
+// get the type of the channel with the specified index
+// 	NOTE:	The sound system need to be completely started before you can use this function.
+//			You can use Sound::isStarted() to wait until it is ready.
+Sound::Channel Sound::getOutputChannelType(unsigned int channel) const {
+	if(!(this->soundIoOutStream)) {
+		std::cerr
+				<<	"WARNING: Sound::getOutputChannelType(): "
+					"Sound system needs to be started before getting the type of a channel"
+				<<	std::endl;
+
+		return CHANNEL_NONE;
+	}
+
+	if(this->soundIoOutStream->layout.channel_count < 0)
+		return CHANNEL_NONE;
+
+	if(channel > static_cast<unsigned int>(this->soundIoOutStream->layout.channel_count))
+		return CHANNEL_NONE;
+
+	switch(this->soundIoOutStream->layout.channels[channel]) {
+	case SoundIoChannelIdInvalid:
+		return CHANNEL_NONE;
+
+	case SoundIoChannelIdFrontLeft:
+		return CHANNEL_FRONT_LEFT;
+
+	case SoundIoChannelIdFrontRight:
+		return CHANNEL_FRONT_RIGHT;
+
+	case SoundIoChannelIdFrontRightCenter:
+		return CHANNEL_FRONT_RIGHT_CENTER;
+
+	case SoundIoChannelIdFrontCenter:
+		return CHANNEL_FRONT_CENTER;
+
+	case SoundIoChannelIdBackLeft:
+		return CHANNEL_BACK_LEFT;
+
+	case SoundIoChannelIdBackRight:
+		return CHANNEL_BACK_RIGHT;
+
+	case SoundIoChannelIdFrontLeftCenter:
+		return CHANNEL_FRONT_LEFT;
+
+	case SoundIoChannelIdBackCenter:
+		return CHANNEL_BACK_CENTER;
+
+	case SoundIoChannelIdSideLeft:
+		return CHANNEL_SIDE_LEFT;
+
+	case SoundIoChannelIdSideRight:
+		return CHANNEL_SIDE_RIGHT;
+
+	case SoundIoChannelIdTopCenter:
+		return CHANNEL_TOP_CENTER;
+
+	case SoundIoChannelIdTopFrontLeft:
+		return CHANNEL_TOP_FRONT_LEFT;
+
+	case SoundIoChannelIdTopFrontCenter:
+		return CHANNEL_TOP_FRONT_CENTER;
+
+	case SoundIoChannelIdTopFrontRight:
+		return CHANNEL_TOP_FRONT_RIGHT;
+
+	case SoundIoChannelIdTopBackLeft:
+		return CHANNEL_TOP_BACK_LEFT;
+
+	case SoundIoChannelIdTopBackCenter:
+		return CHANNEL_TOP_BACK_CENTER;
+
+	case SoundIoChannelIdTopBackRight:
+		return CHANNEL_TOP_BACK_RIGHT;
+
+	case SoundIoChannelIdLfe:
+		return CHANNEL_SUBWOOFER;
+
+	default:
+		return CHANNEL_OTHER;
+	}
+}
+
+// get the name of the channel with the specified index
+// 	NOTE:	The sound system need to be completely started before you can use this function.
+//			You can use Sound::isStarted() to wait until it is ready.
+std::string Sound::getOutputChannelName(unsigned int channel) const {
+	if(!(this->soundIoOutStream)) {
+		std::cerr
+				<<	"WARNING: Sound::getChannelType(): "
+					"Sound system needs to be started before getting the type of a channel"
+				<<	std::endl;
+
+		return "<unknown>";
+	}
+
+	if(this->soundIoOutStream->layout.channel_count < 0)
+		return "<none>";
+
+	if(channel > static_cast<unsigned int>(this->soundIoOutStream->layout.channel_count))
+		return "<none>";
+
+	switch(this->soundIoOutStream->layout.channels[channel]) {
+	case SoundIoChannelIdInvalid:
+		return "<none>";
+
+	case SoundIoChannelIdFrontLeft:
+		return "Front left";
+
+	case SoundIoChannelIdFrontRight:
+		return "Front right";
+
+	case SoundIoChannelIdFrontRightCenter:
+		return "Front right center";
+
+	case SoundIoChannelIdFrontCenter:
+		return "Front center";
+
+	case SoundIoChannelIdBackLeft:
+		return "Back left";
+
+	case SoundIoChannelIdBackRight:
+		return "Back right";
+
+	case SoundIoChannelIdFrontLeftCenter:
+		return "Front left";
+
+	case SoundIoChannelIdBackCenter:
+		return "Back center";
+
+	case SoundIoChannelIdSideLeft:
+		return "Side leftt";
+
+	case SoundIoChannelIdSideRight:
+		return "Side right";
+
+	case SoundIoChannelIdTopCenter:
+		return "Top center";
+
+	case SoundIoChannelIdTopFrontLeft:
+		return "Top front left";
+
+	case SoundIoChannelIdTopFrontCenter:
+		return "Top front center";
+
+	case SoundIoChannelIdTopFrontRight:
+		return "Top front right";
+
+	case SoundIoChannelIdTopBackLeft:
+		return "Top back left";
+
+	case SoundIoChannelIdTopBackCenter:
+		return "Top back center";
+
+	case SoundIoChannelIdTopBackRight:
+		return "Top back right";
+
+	case SoundIoChannelIdLfe:
+		return "Subwoofer";
+
+	default:
+		return "<other>";
 	}
 }
 
@@ -278,6 +521,9 @@ void Sound::threadInit() {
 
 	if(this->outputSampleRate)
 		this->soundIoOutStream->sample_rate = this->outputSampleRate;
+
+	if(this->outputChannels)
+		this->soundIoOutStream->layout = this->getLayout();
 
 	this->soundIoOutStream->write_callback = Sound::callbackWrite;
 	this->soundIoOutStream->underflow_callback = Sound::callbackUnderflow;
@@ -343,10 +589,15 @@ void Sound::threadInit() {
 
 	// calculate the number of seconds per sample
 	this->secondsPerFrame = 1.f / this->soundIoOutStream->sample_rate;
+
+	// done
+	this->initialized = true;
 }
 
 // clear thread-related resources
 void Sound::threadClear() {
+	this->initialized = false;
+
 	if(this->soundIoOutStream) {
 		soundio_outstream_destroy(this->soundIoOutStream);
 
@@ -397,6 +648,9 @@ void Sound::onBackendDisconnected(int error) {
 
 // write to the sound output device using the provided callback function
 void Sound::onWrite(int frameCountMin, int frameCountMax) {
+	if(!(this->soundIoOutStream))
+		throw std::runtime_error("Sound::onWrite(): soundIoOutStream == nullptr");
+
 	const auto * pointerToLayout = &(this->soundIoOutStream->layout);
 	SoundIoChannelArea * pointerToAreas = nullptr;
 
@@ -405,6 +659,11 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 
 	if(frameCountMax < 0)
 		throw std::runtime_error("Sound::onWrite(): frameCountMax < 0");
+
+	if(pointerToLayout->channel_count <= 0)
+		throw std::runtime_error("Sound::onWrite(): no channels to write sound to");
+
+	const unsigned int channelCount = static_cast<unsigned int>(pointerToLayout->channel_count);
 
 	// write a decent number of frames
 	auto framesLeft = frameCountMax;
@@ -436,10 +695,11 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 
 		for(auto frame = 0; frame < frameCount; ++frame) {
 			// get sample from callback function
-			const double sample = this->output(this->secondsOffset + frame * this->secondsPerFrame);
-
-			for(auto channel = 0; channel < pointerToLayout->channel_count; ++channel) {
-				this->write(pointerToAreas[channel].ptr, sample);
+			for(unsigned int channel = 0; channel < channelCount; ++channel) {
+				this->write(
+						pointerToAreas[channel].ptr,
+						this->output(channel, this->secondsOffset + frame * this->secondsPerFrame)
+				);
 
 				pointerToAreas[channel].ptr += pointerToAreas[channel].step;
 			}
@@ -595,6 +855,23 @@ void Sound::setOutputDevice(int index) {
 
 	if(restart)
 		this->start(this->secondsOffset);
+}
+
+// get the pointer to a layout fitting the specified options (i.e. channels) or to the default if none was found
+const SoundIoChannelLayout& Sound::getLayout() const {
+	if(!(this->soundIoOutputDevice))
+		throw std::runtime_error("The sound system needs to be started before getting information about the output layout");
+
+	for(auto layout = 0; layout < this->soundIoOutputDevice->layout_count; ++layout)
+		if(
+				this->soundIoOutputDevice->layouts[layout].channel_count > 0
+				&& static_cast<unsigned int>(
+						this->soundIoOutputDevice->layouts[layout].channel_count
+				) == this->outputChannels
+		)
+			return this->soundIoOutputDevice->layouts[layout];
+
+	return this->soundIoOutputDevice->current_layout;
 }
 
 // write a 16-bit integer sample

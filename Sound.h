@@ -21,8 +21,31 @@
 
 class Sound {
 public:
-	using OutputFunction = std::function<double(double)>;
+	using OutputFunction = std::function<double(unsigned int, double)>;
 	using WriteFunction = std::function<void(void *, double)>;
+
+	enum Channel {
+		CHANNEL_NONE,
+		CHANNEL_FRONT_LEFT,
+		CHANNEL_FRONT_LEFT_CENTER,
+		CHANNEL_FRONT_RIGHT,
+		CHANNEL_FRONT_RIGHT_CENTER,
+		CHANNEL_FRONT_CENTER,
+		CHANNEL_BACK_LEFT,
+		CHANNEL_BACK_RIGHT,
+		CHANNEL_BACK_CENTER,
+		CHANNEL_SIDE_LEFT,
+		CHANNEL_SIDE_RIGHT,
+		CHANNEL_TOP_CENTER,
+		CHANNEL_TOP_FRONT_LEFT,
+		CHANNEL_TOP_FRONT_RIGHT,
+		CHANNEL_TOP_FRONT_CENTER,
+		CHANNEL_TOP_BACK_LEFT,
+		CHANNEL_TOP_BACK_RIGHT,
+		CHANNEL_TOP_BACK_CENTER,
+		CHANNEL_SUBWOOFER,
+		CHANNEL_OTHER
+	};
 
 	struct Device {
 		int index;
@@ -37,22 +60,34 @@ public:
 	Sound();
 	virtual ~Sound();
 
+	// general getters
 	std::vector<Device> listOutputDevices() const;
 	int getDefaultOutputDeviceIndex() const;
 	std::string getOutputDeviceId() const;
 	std::string getOutputDeviceName() const;
 	std::string getBackend() const;
 
-	void setOutputDeviceByIndex(int index);
+	// setters
+	void setOutputDeviceByIndex(unsigned int index);
 	void setOutputDeviceById(const std::string& id);
 	void setOutputFunction(OutputFunction callBack);
 	void setOutputStreamName(const std::string& streamName);
 	void setOutputSampleRate(unsigned int sampleRate);
+	void setOutputChannels(unsigned int channels);
 	void setOutputMaxFrames(unsigned int maxFrames);
 	void setOutputLatency(double latency);
 
 	void start(double startTimeInSeconds);
 	void stop();
+
+	// getters for when after the sound system has been started
+	bool isStarted() const;
+	int getOutputSampleRate() const;
+	int getOutputChannels() const;
+	double getOutputLatency() const;
+	std::string getOutputLayoutName() const;
+	Channel getOutputChannelType(unsigned int channel) const;
+	std::string getOutputChannelName(unsigned int channel) const;
 
 private:
 	void thread();
@@ -71,6 +106,7 @@ private:
 
 	int outputDeviceIdToIndex(const std::string& id);
 	void setOutputDevice(int index);
+	const SoundIoChannelLayout& getLayout() const;
 
 	static void writeSampleS16(void * target, double sample);
 	static void writeSampleS32(void * target, double sample);
@@ -79,6 +115,7 @@ private:
 
 	bool started;
 	bool connected;
+	std::atomic<bool> initialized;
 	std::atomic<bool> running;
 	std::thread soundThread;
 	double secondsOffset;
@@ -94,6 +131,7 @@ private:
 	std::string outputDeviceName;
 	std::string outputStreamName;
 	int outputSampleRate;
+	unsigned int outputChannels;
 	int outputMaxFrames;
 	double outputLatency;
 

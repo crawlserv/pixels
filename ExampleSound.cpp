@@ -45,6 +45,7 @@ int ExampleSound::run(int argc, char * argv[]) {
 					&ExampleSound::generateSound,
 					this,
 					std::placeholders::_1,
+					std::placeholders::_2,
 					true
 			)
 	);
@@ -59,6 +60,31 @@ int ExampleSound::run(int argc, char * argv[]) {
 void ExampleSound::onCreate() {
 	// start the sound system
 	this->soundSystem.start(this->getTime());
+
+	// wait for the sound system to be ready
+	while(!(this->soundSystem.isStarted())) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+
+	// query for information about the sound output and print it to stdout
+	std::cout << "device=" << this->soundSystem.getOutputDeviceName() << std::endl;
+	std::cout << "samplerate=" << this->soundSystem.getOutputSampleRate() << std::endl;
+
+	const auto latency = this->soundSystem.getOutputLatency();
+
+	if(latency > 0.)
+		std::cout << "latency=" << latency << "s" << std::endl;
+	else
+		std::cout << "latency=<unknown>" << std::endl;
+
+	std::cout << "layout=" << this->soundSystem.getOutputLayoutName() << std::endl;
+
+	const auto channels = this->soundSystem.getOutputChannels();
+
+	std::cout << "channels=" << channels << std::endl;
+
+	for(auto channel = 0; channel < channels; ++channel)
+		std::cout << "\t#" << channel << ": " << this->soundSystem.getOutputChannelName(channel) << std::endl;
 }
 
 // update frame
@@ -105,7 +131,7 @@ void ExampleSound::onUpdate(double elapsedTime) {
 	const double halfHeight = static_cast<double>(h) / 2;
 
 	for(int x = 0; x < w; ++x) {
-		const double sound = this->generateSound(currentTime + static_cast<double>(x) / w * res);
+		const double sound = this->generateSound(0, currentTime + static_cast<double>(x) / w * res);
 
 		int yFrom = halfHeight;
 		int yTo = std::lround(halfHeight + sound * halfHeight);
@@ -244,8 +270,9 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 		noiseGenerator = &(this->noiseGenerator);
 
 	/*
-	 * NOTE:	Noise will be generated on-the-fly and won't be rendered correctly, because
-	 * 			both the rendering thread and the sound thread use different data structures.
+	 * NOTE:	Noise will be generated on-the-fly and therefore won't be rendered correctly,
+	 * 			another pseudo-random noise will be rendered instead substituting for the
+	 * 			actual noise that is being sent to the output sound device.
 	 */
 
 	// add sound wave to the main thread
@@ -273,7 +300,7 @@ void ExampleSound::clearSoundWaves() {
 }
 
 // generate sound at the specified time
-double ExampleSound::generateSound(double time, bool forThread) {
+double ExampleSound::generateSound(unsigned int channel, double time, bool forThread) {
 	if(forThread) {
 		/*
 		 * NOTE:	It is considered bad practise to use locking inside sound output code,
