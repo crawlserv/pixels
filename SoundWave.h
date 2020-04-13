@@ -8,7 +8,7 @@
 #ifndef SOUNDWAVE_H_
 #define SOUNDWAVE_H_
 
-#include <cmath>	// M_2_PI, M_PI, M_PI_2, std::asin, std::atan, std::sin, std::tan
+#include <cmath>	// M_2_PI, M_PI, M_PI_2, std::asin, std::fmod, std::sin
 
 // class representing an abstract sound wave that diminishes over time
 class SoundWave {
