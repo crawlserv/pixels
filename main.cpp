@@ -36,7 +36,7 @@ int main(int argc, char * argv[]) {
 	 * Press SPACE to add a semi-random square sound wave.
 	 * Press TAB to add a semi-random triangle sound wave.
 	 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
-	 * Press the RIGHT and LEFT arrow keys to adjust the resolution of the sound wave.
+	 * Press the RIGHT and LEFT arrow keys to adjust the resolution of the rendered sound wave.
 	 */
 	return ExampleSound().run(argc, argv);
 }
