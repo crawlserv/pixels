@@ -89,10 +89,16 @@ std::string Rand::str() const {
 // set the limits for pseudo-random byte creation (default: 0 to std::numeric_limits<unsigned char>::max())
 void Rand::setByteLimits(unsigned char from, unsigned char to) {
 	if(from > to) {
+		if(this->byteMin == from && this->byteMax == to)
+			return;
+
 		this->byteMin = to;
 		this->byteMax = from;
 	}
 	else {
+		if(this->byteMin == to && this->byteMax == from)
+			return;
+
 		this->byteMin = from;
 		this->byteMax = to;
 	}
@@ -107,10 +113,16 @@ void Rand::setByteLimits(unsigned char from, unsigned char to) {
 // set the limits for pseudo-random integer creation (default: 0 to std::numeric_limits<int>::max())
 void Rand::setIntLimits(int from, int to) {
 	if(from > to) {
+		if(this->intMin == from && this->intMax == to)
+			return;
+
 		this->intMin = to;
 		this->intMax = from;
 	}
 	else {
+		if(this->intMin == to && this->intMax == from)
+			return;
+
 		this->intMin = from;
 		this->intMax = to;
 	}
@@ -125,10 +137,16 @@ void Rand::setIntLimits(int from, int to) {
 // set the limits for pseudo-random float creation (default: 0 to 1)
 void Rand::setRealLimits(double from, double to) {
 	if(from > to) {
+		if(this->realMin == from && this->realMax == to)
+			return;
+
 		this->realMin = to;
 		this->realMax = from;
 	}
 	else {
+		if(this->realMin == to && this->realMax == from)
+			return;
+
 		this->realMin = from;
 		this->realMax = to;
 	}
