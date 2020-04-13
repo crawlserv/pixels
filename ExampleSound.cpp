@@ -87,9 +87,8 @@ void ExampleSound::onCreate() {
 	this->soundSystem.start(this->getTime());
 
 	// wait for the sound system to be ready
-	while(!(this->soundSystem.isStarted())) {
+	while(!(this->soundSystem.isStarted()))
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
 
 	// query for information about the sound output and print it to stdout
 	std::cout << "device=" << this->soundSystem.getOutputDeviceName() << std::endl;
@@ -289,8 +288,9 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 	const double length = this->randomGenerator.generateReal();
 	const double start = this->getTime();
 
-	// envelope for decay only (over the entire length of the waveform)
-	const SoundEnvelope envelope(SoundEnvelope::ADSRTimes(0., length, 0., 0.), 1., 0.);
+	// set your envelope here
+	//const SoundEnvelope envelope(SoundEnvelope::ADSRTimes(0., length, 0.), 1., 0.);
+	const SoundEnvelope envelope(SoundEnvelope::ADSRTimes(0.1, 0.01, 0.2), 1., 0.8);
 
 	/*
 	 * NOTE:	Noise will be generated on-the-fly and therefore won't be rendered correctly,
