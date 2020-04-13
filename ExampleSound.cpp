@@ -11,6 +11,8 @@
 ExampleSound::ExampleSound()
 		: pixelSize(2),
 		  waveResolution(10),
+		  masterVolume(0.7),
+		  maxVolume(0.8),
 		  randomGenerator(Rand::RAND_ALGO_LEHMER32),
 		  noiseGeneratorMain(Rand::RAND_ALGO_LEHMER32),
 		  noiseGeneratorThread(Rand::RAND_ALGO_LEHMER32),
@@ -55,6 +57,28 @@ int ExampleSound::run(int argc, char * argv[]) {
 	this->Engine::run();
 
 	return EXIT_SUCCESS;
+}
+
+// set the general master volume (default: 0.7)
+void ExampleSound::setMasterVolume(double master) {
+	if(master < 0.)
+		throw std::runtime_error("Invalid master volume");
+
+	if(master > 1.)
+		this->masterVolume = 1.;
+	else
+		this->masterVolume = master;
+}
+
+// set the maximum volume for clipping (default: 0.8)
+void ExampleSound::setMaxVolume(double max) {
+	if(max < 0.)
+		throw std::runtime_error("Invalid maximum volume");
+
+	if(max > 0.995)
+		this->maxVolume = 0.995;
+	else
+		this->maxVolume = max;
 }
 
 // create resources
@@ -257,7 +281,7 @@ void ExampleSound::onDestroy() {
 
 // add a sound wave
 void ExampleSound::addSoundWave(SoundWave::Type type) {
-	// generate semi-random frequency and length
+	// generate semi-random frequency and random length
 	constexpr double octaveBase = 110.;
 	constexpr double twelfthRootOf2 = std::pow(2., 1. / 12.);
 
@@ -265,13 +289,8 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 	const double length = this->randomGenerator.generateReal();
 	const double start = this->getTime();
 
-	Rand * noiseGeneratorMainPointer = nullptr;
-	Rand * noiseGeneratorThreadPointer = nullptr;
-
-	if(type == SoundWave::SOUNDWAVE_NOISE) {
-		noiseGeneratorMainPointer = &(this->noiseGeneratorMain);
-		noiseGeneratorThreadPointer = &(this->noiseGeneratorThread);
-	}
+	// envelope for decay only (over the entire length of the waveform)
+	const SoundEnvelope envelope(SoundEnvelope::ADSRTimes(0., length, 0., 0.), 1., 0.);
 
 	/*
 	 * NOTE:	Noise will be generated on-the-fly and therefore won't be rendered correctly,
@@ -279,20 +298,26 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 	 * 			actual noise that is being sent to the output sound device.
 	 */
 
-	// add sound wave to the main thread
+	// add sound wave to the main thread and render it immediately
 	this->soundWavesForMain.emplace_back(
 			SoundWave::Properties(type, frequency, length, start),
-			noiseGeneratorMainPointer
+			envelope,
+			&(this->noiseGeneratorMain)
 	);
 
-	// add sound wave to the sound thread
+	this->soundWavesForMain.back().start(start);
+
+	// add sound wave to the sound thread and play it immediately
 	{
 		std::lock_guard<std::mutex> threadDataLock(this->lockSoundWavesForThread);
 
 		this->soundWavesForThread.emplace_back(
 				SoundWave::Properties(type, frequency, length, start),
-				noiseGeneratorThreadPointer
+				envelope,
+				&(this->noiseGeneratorThread)
 		);
+
+		this->soundWavesForThread.back().start(start);
 	}
 }
 
@@ -327,23 +352,22 @@ double ExampleSound::generateSound(unsigned int channel, double time, bool forTh
 }
 
 // generate sound at the specified time from the specified source
-double ExampleSound::generateSoundFrom(double time, const std::vector<SoundWave>& from) {
-	constexpr double masterVolume = 0.75;
-	constexpr double maxVolume = 0.8;
-
+double ExampleSound::generateSoundFrom(double time, std::vector<SoundWave>& from) {
 	if(from.empty())
 		return 0.;
 
+	// mixing
 	double result = 0.;
 
-	for(const auto& wave : from)
-		result += masterVolume * wave.get(time);
+	for(auto& wave : from)
+		result += this->masterVolume * wave.get(time);
 
-	if(result > maxVolume)
-		result = maxVolume;
+	// clipping
+	if(result > this->maxVolume)
+		result = this->maxVolume;
 
-	if(result < - maxVolume)
-		result = - maxVolume;
+	if(result < - this->maxVolume)
+		result = - this->maxVolume;
 
 	return result;
 }
