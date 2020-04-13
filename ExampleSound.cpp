@@ -261,7 +261,7 @@ double ExampleSound::generateSound(double time, bool forThread) {
 
 // generate sound at the specified time from the specified source
 double ExampleSound::generateSoundFrom(double time, const std::vector<SoundWave>& from) {
-	constexpr double generalVolume = 0.75;
+	constexpr double masterVolume = 0.75;
 	constexpr double maxVolume = 0.8;
 
 	if(from.empty())
@@ -270,7 +270,7 @@ double ExampleSound::generateSoundFrom(double time, const std::vector<SoundWave>
 	double result = 0.;
 
 	for(const auto& wave : from)
-		result += generalVolume * wave.get(time);
+		result += masterVolume * wave.get(time);
 
 	if(result > maxVolume)
 		result = maxVolume;

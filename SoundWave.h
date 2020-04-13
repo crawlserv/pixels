@@ -8,16 +8,17 @@
 #ifndef SOUNDWAVE_H_
 #define SOUNDWAVE_H_
 
-#include <cmath>	// M_PI, std::asin, std::atan, std::cos, std::sin, std::tan
+#include <cmath>	// M_2_PI, M_PI, std::asin, std::atan, std::sin, std::tan
 
 // class representing an abstract sound wave that diminishes over time
 class SoundWave {
 public:
 	enum Type {
-		SOUNDWAVE_SINE = 0,
-		SOUNDWAVE_SQUARE = 1,
-		SOUNDWAVE_TRIANGLE = 2,
-		SOUNDWAVE_SAWTOOTH = 3
+		SOUNDWAVE_SINE,
+		SOUNDWAVE_SQUARE,
+		SOUNDWAVE_TRIANGLE,
+		SOUNDWAVE_SAWTOOTH,
+		SOUNDWAVE_SAWTOOTH_OPTIMIZED
 	};
 
 	SoundWave(Type type, double frequency, double length, double startTime);
@@ -30,8 +31,11 @@ private:
 	Type type;
 
 	double frequency;
+	double period;
 	double length;
 	double startTime;
+	double angularVelocity;
+	double halfAngularVelocity;
 };
 
 #endif /* SOUNDWAVE_H_ */

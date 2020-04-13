@@ -9,17 +9,23 @@
 
 #include <iostream>
 
-// constructor: set the properties of the sound wave
+// constructor: set the properties of the sound wave and calculate some standard values
 SoundWave::SoundWave(Type type, double frequency, double length, double startTime)
-		: type(type), frequency(frequency), length(length), startTime(startTime) {}
+		: type(type),
+		  frequency(frequency),
+		  period(1. / frequency),
+		  length(length),
+		  startTime(startTime),
+		  angularVelocity(frequency * 2. * M_PI),
+		  halfAngularVelocity(frequency * M_PI) {}
 
 // destructor stub
 SoundWave::~SoundWave() {}
 
-// get the sound wave value at the specified time
+// get the sound wave value at the specified time, in diminishing volume
 double SoundWave::get(double time) const {
-	constexpr double squareMax = 0.7;
-	constexpr double sawtoothMax = 0.7;
+	constexpr double squareMax = 0.6;
+	constexpr double sawToothMax = 0.7;
 
 	if(time > this->startTime + this->length)
 		return 0.;
@@ -29,22 +35,33 @@ double SoundWave::get(double time) const {
 	switch(this->type) {
 	case SOUNDWAVE_SINE:
 		// generate sine wave
-		return volume * std::sin(this->frequency * 2. * M_PI * time);
+		return volume * std::sin(this->angularVelocity * time);
 
 	case SOUNDWAVE_SQUARE:
 		// generate square wave
-		if(std::sin(this->frequency * 2. * M_PI * time) > 0.)
+		if(std::sin(this->angularVelocity * time) > 0.)
 			return volume * squareMax;
 		else
 			return -volume * squareMax;
 
 	case SOUNDWAVE_TRIANGLE:
 		// generate triangle wave
-		return volume * std::asin(std::cos(this->frequency * 2. * M_PI * time)) / M_PI_2;
+		return volume * std::asin(std::sin(this->angularVelocity * time)) * M_2_PI;
 
 	case SOUNDWAVE_SAWTOOTH:
-		// generate sawtooth wave
-		return volume * sawtoothMax * - M_2_PI * std::atan(1. / std::tan((time * M_PI) * this->frequency));
+	{
+		// generate "smooth" sawtooth wave
+		double dOutput = 0.0;
+
+		for(double n = 1.0; n < 50.; n++)
+			dOutput -= (sin(n * this->angularVelocity * time)) / n;
+
+		return volume * sawToothMax * dOutput * (2.0 / M_PI);
+	}
+
+	case SOUNDWAVE_SAWTOOTH_OPTIMIZED:
+		// generate sawtooth wave in an optimized way
+		return volume * sawToothMax * M_2_PI * (this->frequency * M_PI * std::fmod(time, this->period) - M_PI_2);
 	}
 
 	return 0.;
