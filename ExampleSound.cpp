@@ -258,6 +258,12 @@ void ExampleSound::clearSoundWaves() {
 // generate sound at the specified time
 double ExampleSound::generateSound(double time, bool forThread) {
 	if(forThread) {
+		/*
+		 * NOTE:	It is considered bad practise to use locking inside sound output code,
+		 * 			because it runs the risk of temporary breakdowns in the sound output.
+		 * 			Keep that in mind if you want to dive deeper into audio programming !
+		 */
+
 		std::lock_guard<std::mutex> threadDataLock(this->lockSoundWavesForThread);
 
 		return this->generateSoundFrom(time, this->soundWavesForThread);
