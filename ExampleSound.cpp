@@ -243,6 +243,11 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 	if(type == SoundWave::SOUNDWAVE_NOISE)
 		noiseGenerator = &(this->noiseGenerator);
 
+	/*
+	 * NOTE:	Noise will be generated on-the-fly and won't be rendered correctly, because
+	 * 			both the rendering thread and the sound thread use different data structures.
+	 */
+
 	// add sound wave to the main thread
 	this->soundWavesForMain.emplace_back(type, frequency, length, start, noiseGenerator);
 
