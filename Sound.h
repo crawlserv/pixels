@@ -41,6 +41,7 @@ public:
 	int getDefaultOutputDeviceIndex() const;
 	std::string getOutputDeviceId() const;
 	std::string getOutputDeviceName() const;
+	std::string getBackend() const;
 
 	void setOutputDeviceByIndex(int index);
 	void setOutputDeviceById(const std::string& id);

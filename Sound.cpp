@@ -40,6 +40,8 @@ Sound::Sound()
 	this->soundIo->on_backend_disconnect = Sound::callbackBackendDisconnected;
 	this->soundIo->userdata = static_cast<void *>(this);
 
+	std::cout << "backend=" << this->getBackend() << std::endl;
+
 	// flush events
 	soundio_flush_events(this->soundIo);
 
@@ -129,6 +131,34 @@ std::string Sound::getOutputDeviceId() const {
 // get the name of the currently selected device
 std::string Sound::getOutputDeviceName() const {
 	return this->outputDeviceName;
+}
+
+// get the name of the underlying backend used for communicating with the sound device(s)
+std::string Sound::getBackend() const {
+	switch(this->soundIo->current_backend) {
+	case SoundIoBackendNone:
+		return "<none>";
+
+	case SoundIoBackendJack:
+		return "Jack";
+
+	case SoundIoBackendPulseAudio:
+		return "PulseAudio";
+
+	case SoundIoBackendAlsa:
+		return "ALSA";
+
+	case SoundIoBackendCoreAudio:
+		return "Core Audio";
+
+	case SoundIoBackendWasapi:
+		return "Wasapi";
+
+	case SoundIoBackendDummy:
+		return "<dummy>";
+	}
+
+	return "<unknown>";
 }
 
 // set the current output device by its index (e.g. when received from Sound::listOutputDevices)
