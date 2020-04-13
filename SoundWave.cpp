@@ -93,11 +93,8 @@ double SoundWave::get(double time) const {
 				);
 
 	case SOUNDWAVE_NOISE:
-		if(this->noiseGeneratorPointer) {
-			this->noiseGeneratorPointer->seed(this->frequency);
-
+		if(this->noiseGeneratorPointer)
 			return volume * this->waveVolume * this->noiseGeneratorPointer->generateReal();
-		}
 	}
 
 	return 0.;

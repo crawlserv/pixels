@@ -37,7 +37,7 @@ private:
 	Type type;
 
 	// initial values
-	double frequency;	// if generating noise, this value will be used as seed
+	double frequency;
 	double period;
 	double length;
 	double startTime;
