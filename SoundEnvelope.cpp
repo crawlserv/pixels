@@ -16,9 +16,9 @@ SoundEnvelope::SoundEnvelope(const ADSRTimes& adsr, double startAmplitude, doubl
 		  timeReleased(0.),
 		  isOn(false) {}
 
-// constructor for a simple envelope of the specified length (no attack, decay, or release; amplitude of one)
+// constructor for a simple envelope of the specified length (decay only; amplitude from 1. to 0.)
 SoundEnvelope::SoundEnvelope(double length)
-		: SoundEnvelope(ADSRTimes(0., 0., length, 0.), 0., 1.) {}
+		: SoundEnvelope(ADSRTimes(0., length, 0.), 1., 0.) {}
 
 // destructor stub
 SoundEnvelope::~SoundEnvelope() {}

@@ -13,10 +13,9 @@ public:
 	struct ADSRTimes {
 		double attackTime;
 		double decayTime;
-		double sustainTime;
 		double releaseTime;
 
-		ADSRTimes(double a, double d, double s, double r) : attackTime(a), decayTime(d), sustainTime(s), releaseTime(r) {}
+		ADSRTimes(double a, double d, double r) : attackTime(a), decayTime(d), releaseTime(r) {}
 	};
 
 	SoundEnvelope(const ADSRTimes& adsr, double startAmplitude, double sustainAmplitude);
