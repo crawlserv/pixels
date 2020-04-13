@@ -11,6 +11,7 @@
 #include "Engine.h"
 #include "Rand.h"
 #include "Sound.h"
+#include "SoundEnvelope.h"
 #include "SoundWave.h"
 
 #include <algorithm>	// std::remove_if, std::swap
@@ -31,6 +32,9 @@ public:
 
 	int run(int argc, char * argv[]);
 
+	void setMasterVolume(double master);
+	void setMaxVolume(double max);
+
 private:
 	void onCreate() override;
 	void onUpdate(double elapsedTime) override;
@@ -40,10 +44,13 @@ private:
 	void clearSoundWaves();
 
 	double generateSound(unsigned int channel, double time, bool forThread = false);
-	double generateSoundFrom(double time, const std::vector<SoundWave>& from);
+	double generateSoundFrom(double time, std::vector<SoundWave>& from);
 
 	unsigned short pixelSize;
 	unsigned short waveResolution;
+	double masterVolume;
+	double maxVolume;
+
 	Rand randomGenerator;
 	Rand noiseGeneratorMain;
 	Rand noiseGeneratorThread;
