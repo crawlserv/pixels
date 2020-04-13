@@ -51,12 +51,12 @@ double SoundWave::get(double time) const {
 	case SOUNDWAVE_SAWTOOTH:
 	{
 		// generate "smooth" sawtooth wave
-		double dOutput = 0.0;
+		double result = 0.0;
 
 		for(double n = 1.0; n < 50.; n++)
-			dOutput -= (sin(n * this->angularVelocity * time)) / n;
+			result -= (std::sin(n * this->angularVelocity * time)) / n;
 
-		return volume * sawToothMax * dOutput * (2.0 / M_PI);
+		return volume * sawToothMax * result * M_2_PI;
 	}
 
 	case SOUNDWAVE_SAWTOOTH_OPTIMIZED:
