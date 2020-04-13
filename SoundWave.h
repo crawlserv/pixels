@@ -9,6 +9,7 @@
 #define SOUNDWAVE_H_
 
 #include "Rand.h"
+#include "SoundEnvelope.h"
 
 #include <cmath>		// M_2_PI, M_PI, M_PI_2, std::asin, std::fmod, std::sin
 
@@ -24,25 +25,37 @@ public:
 		SOUNDWAVE_NOISE
 	};
 
-	SoundWave(Type type, double frequency, double length, double startTime, Rand * noiseGeneratorPointer = nullptr);
+	struct Properties {
+		Type type;
+		double frequency;
+		double length;
+		double startTime;
+
+		Properties(Type type, double frequency, double length, double startTime)
+				: type(type), frequency(frequency), length(length), startTime(startTime) {}
+	};
+
+	SoundWave(const Properties& properties, Rand * noiseGeneratorPointer = nullptr);
+	SoundWave(const Properties& properties, const SoundEnvelope& envelope, Rand * noiseGeneratorPointer = nullptr);
 	virtual ~SoundWave();
 
-	double get(double time) const;
+	void start(double time);
+	void stop(double time);
+
+	double get(double time);
 	bool done(double time) const;
 
+	void setEnvelope(const SoundEnvelope& envelope);
 	void setWaveVolume(double volume);
 	void setAnalogSawToothN(unsigned int n);
 
 private:
-	Type type;
+	// properties and envelope
+	Properties properties;
+	SoundEnvelope soundEnvelope;
 
-	// initial values
-	double frequency;
+	// pre-calculated values for wave generation
 	double period;
-	double length;
-	double startTime;
-
-	// pre-calculated value for wave generation
 	double angularVelocity;
 
 	// pointer to pseudo-random number generator

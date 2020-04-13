@@ -7,62 +7,83 @@
 
 #include "SoundWave.h"
 
-#include <iostream>
-
-// constructor: set the properties of the sound wave and pre-calculate needed values
-SoundWave::SoundWave(Type type, double frequency, double length, double startTime, Rand * noiseGeneratorPointer)
-		: type(type),
-		  frequency(frequency),
-		  period(1. / frequency),
-		  length(length),
-		  startTime(startTime),
-		  angularVelocity(0.),
-		  noiseGeneratorPointer(noiseGeneratorPointer),
-		  waveVolume(1.),
-		  analogSawToothN(10) {
+// constructor: set properties of the sound wave, the encompassing envelope and pre-calculate values
+SoundWave::SoundWave(
+		const Properties& properties,
+		const SoundEnvelope& envelope,
+		Rand * noiseGeneratorPointer
+)	: properties(properties),
+	  soundEnvelope(envelope),
+	  period(1. / properties.frequency),
+	  angularVelocity(0.),
+	  noiseGeneratorPointer(noiseGeneratorPointer),
+	  waveVolume(1.),
+	  analogSawToothN(10) {
 	// set type-specific default volumes and precalculate angularVelocity if necessary
-	if(this->type == SOUNDWAVE_SAWTOOTH_OPTIMIZED)
+	if(this->properties.type == SOUNDWAVE_SAWTOOTH_OPTIMIZED)
 		this->waveVolume = 0.7;
 
-	if(this->type == SOUNDWAVE_SQUARE)
+	if(this->properties.type == SOUNDWAVE_SQUARE)
 		this->waveVolume = 0.6;
 
-	if(this->type != SOUNDWAVE_SAWTOOTH_OPTIMIZED && this->type != SOUNDWAVE_NOISE)
-		this->angularVelocity = frequency * 2. * M_PI;
+	if(this->properties.type != SOUNDWAVE_SAWTOOTH_OPTIMIZED && this->properties.type != SOUNDWAVE_NOISE)
+		this->angularVelocity = properties.frequency * 2. * M_PI;
 
-	// change real distribution of noise Generator if necessary
-	if(this->noiseGeneratorPointer)
+	// change real distribution of noise generator if necessary
+	if(this->properties.type == SOUNDWAVE_NOISE && this->noiseGeneratorPointer)
 		this->noiseGeneratorPointer->setRealLimits(-1., 1.);
 }
+
+// constructor for using a default envelope (sustain only)
+SoundWave::SoundWave(
+		const Properties& properties,
+		Rand * noiseGeneratorPointer
+)	: SoundWave(properties, SoundEnvelope(properties.length), noiseGeneratorPointer) {}
 
 // destructor stub
 SoundWave::~SoundWave() {}
 
-// get the sound wave value at the specified time, in diminishing volume
-double SoundWave::get(double time) const {
-	if(time > this->startTime + this->length)
+// start the sound wave at the specified time
+void SoundWave::start(double time) {
+	this->soundEnvelope.on(time);
+}
+
+// stop the sound wave at the specified time
+void SoundWave::stop(double time) {
+	this->soundEnvelope.off(time);
+}
+
+// get the sound wave value at the specified time
+double SoundWave::get(double time) {
+	if(time < this->properties.startTime)
 		return 0.;
 
-	const double volume = 1. - (time - this->startTime) / this->length;
+	if(time > this->properties.startTime + this->properties.length)
+		this->soundEnvelope.off(time);
 
-	switch(this->type) {
+	const double volume = this->soundEnvelope.get(time) * this->waveVolume;
+
+	if(volume > 1.)
+		throw std::runtime_error("volume larger than 100%");
+
+	if(volume < 0.0001)
+		return 0.;
+
+	switch(this->properties.type) {
 	case SOUNDWAVE_SINE:
 		// generate sine wave
-		return volume
-				* this->waveVolume
-				* std::sin(this->angularVelocity * time);
+		return volume * std::sin(this->angularVelocity * time);
 
 	case SOUNDWAVE_SQUARE:
 		// generate square wave
 		if(std::sin(this->angularVelocity * time) > 0.)
-			return volume * this->waveVolume;
+			return volume;
 		else
-			return - volume * this->waveVolume;
+			return - volume;
 
 	case SOUNDWAVE_TRIANGLE:
 		// generate triangle wave
 		return volume
-				* this->waveVolume
 				* M_2_PI
 				* std::asin(
 						std::sin(
@@ -78,23 +99,22 @@ double SoundWave::get(double time) const {
 		for(double n = 1.0; n < analogSawToothN; n++)
 			result -= (std::sin(n * this->angularVelocity * time)) / n;
 
-		return volume * this->waveVolume * M_2_PI * result;
+		return volume * M_2_PI * result;
 	}
 
 	case SOUNDWAVE_SAWTOOTH_OPTIMIZED:
 		// generate sawtooth wave in an optimized way
 		return volume
-				* this->waveVolume
 				* M_2_PI
 				* (
-						this->frequency
+						this->properties.frequency
 						* M_PI
 						* std::fmod(time, this->period) - M_PI_2
 				);
 
 	case SOUNDWAVE_NOISE:
 		if(this->noiseGeneratorPointer)
-			return volume * this->waveVolume * this->noiseGeneratorPointer->generateReal();
+			return volume * this->noiseGeneratorPointer->generateReal();
 	}
 
 	return 0.;
@@ -102,7 +122,12 @@ double SoundWave::get(double time) const {
 
 // get whether the sound wave has ended at the specified time
 bool SoundWave::done(double time) const {
-	return time > this->startTime + this->length;
+	return this->soundEnvelope.done(time);
+}
+
+// set the ADSR (attack, decay, sustain, release) envelope of the sound wave
+void SoundWave::setEnvelope(const SoundEnvelope& envelope) {
+	this->soundEnvelope = envelope;
 }
 
 // set the master volume of the wave
