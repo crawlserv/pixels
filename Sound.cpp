@@ -30,7 +30,7 @@ Sound::Sound()
 	if(!(this->soundIo))
 		throw std::runtime_error("soundio_create failed");
 
-	// connect to backend
+	// connect to the backend
 	int error = soundio_connect(this->soundIo);
 
 	if(error)
@@ -243,7 +243,7 @@ void Sound::stop() {
 	}
 }
 
-// check whether sound system has been succesfully started
+// check whether sound system has been succesfully started (thread-safe!)
 bool Sound::isStarted() const {
 	return this->initialized;
 }
@@ -675,11 +675,11 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 			framesLeft = frameCountMin;
 	}
 
-	// loop through frames
+	// loop through the frames
 	while(framesLeft) {
 		auto frameCount = framesLeft;
 
-		// start writing to stream
+		// start writing to the stream
 		const auto beginError = soundio_outstream_begin_write(this->soundIoOutStream, &pointerToAreas, &frameCount);
 
 		if(beginError) {
@@ -694,7 +694,7 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 			return;
 
 		for(auto frame = 0; frame < frameCount; ++frame) {
-			// get sample from callback function
+			// get sample from the callback function
 			for(unsigned int channel = 0; channel < channelCount; ++channel) {
 				this->write(
 						pointerToAreas[channel].ptr,
