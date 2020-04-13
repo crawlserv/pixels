@@ -54,9 +54,9 @@ int main(int argc, char * argv[]) {
 }
 ```
 
-* Press ENTER to add a random sine sound wave.
-* Press SPACE to add a random square sound wave.
-* Press TAB to add a random triangle sound wave.
+* Press ENTER to add a semi-random sine sound wave.
+* Press SPACE to add a semi-random square sound wave.
+* Press TAB to add a semi-random triangle sound wave.
 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
 * Press the RIGHT and LEFT arrow keys to adjust the resolution of the sound wave.
 
