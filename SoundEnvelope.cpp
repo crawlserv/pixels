@@ -41,12 +41,14 @@ void SoundEnvelope::off(double time) {
 
 // get the amplitude of the envelope at the specified time
 double SoundEnvelope::get(double time) const {
+	constexpr double epsilon = 0.0001;
+
 	double result = 0.;
 
 	if(this->isOn) {
 		const double relTime = time - this->timeStarted;
 
-		if(relTime < 0.0001)
+		if(relTime < epsilon)
 			return 0.;
 
 		if(relTime < this->adsrTimes.attackTime)
@@ -66,7 +68,7 @@ double SoundEnvelope::get(double time) const {
 		result = ((time - this->timeReleased) / this->adsrTimes.releaseTime)
 				  * (0. - this->amplitudeSustain) + this->amplitudeSustain;
 
-	if(result < 0.0001)
+	if(result < epsilon)
 		return 0.;
 
 	return result;
