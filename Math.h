@@ -14,16 +14,18 @@
 #include <type_traits>	// std::is_floating_point
 
 namespace Math {
-	// approximates sine with a Taylor series of five
+	// approximates sine for x > 0 using a Taylor series of five summands
 	template<typename F = double>
 	F approxSinTaylor(F x) {
 		static_assert(std::is_floating_point<F>::value, "The type of the argument needs to be a floating point number");
 
+		constexpr F epsilon = 0.0001;
+
+		if(x < epsilon)
+			return 0.;
+
 		if(x > 2 * M_PI)
 			x = std::fmod(x, 2 * M_PI);
-
-		if(x < 0.0001)
-			return 0.;
 
 		if(x <= M_PI_2) {
 			// in this quadrant the Taylor magic happens
@@ -54,6 +56,49 @@ namespace Math {
 			return - approxSinTaylor(x - M_PI);
 
 		return - approxSinTaylor(2 * M_PI - x);
+	}
+
+	// approximates sine for x > 0 with a quadratic equation
+	template<typename F = double>
+	F approxSinQuad(F x) {
+		static_assert(std::is_floating_point<F>::value, "The type of the argument needs to be a floating point number");
+
+		constexpr F epsilon = 0.0001;
+
+		if(x < epsilon)
+			return 0.;
+
+		constexpr double div_2pi = 0.5 * M_1_PI;
+
+		F t = x * div_2pi;	// x / (2 * pi)
+
+		t -= (int) t;		// - floor(x)
+
+		if(t < 0.5)
+			return - 16 * t * t + 8 * t;
+
+		return 16 * t * t - 24 * t + 8;
+	}
+
+	// aproximate sine for x > 0 with a cubic equation
+	template<typename F = double>
+	F approxSinCubic(F x) {
+		static_assert(std::is_floating_point<F>::value, "The type of the argument needs to be a floating point number");
+
+		constexpr F epsilon = 0.0001;
+
+		if(x < epsilon)
+			return 0.;
+
+		constexpr double div_2pi = 0.5 * M_1_PI;
+
+		F t = x * div_2pi;	// x / (2 * pi)
+
+		t -= (int) t;		// - floor(x)
+
+		const F tSquared = t * t;
+
+		return 20.785 * t * tSquared - 31.1775 * tSquared + 10.3925 * t;
 	}
 }
 
