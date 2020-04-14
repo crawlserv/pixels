@@ -8,7 +8,7 @@
 #ifndef MATH_H_
 #define MATH_H_
 
-#include <cmath>		// std::fabs
+#include <cmath>		// std::fmod
 #include <type_traits>	// std::is_floating_point
 
 namespace Math {
