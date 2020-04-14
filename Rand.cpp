@@ -103,7 +103,7 @@ void Rand::setByteLimits(unsigned char from, unsigned char to) {
 		this->byteMax = to;
 	}
 
-	this->byteHalf = (this->byteMax - this->byteMin) / 2;
+	this->byteHalf = static_cast<unsigned char>((this->byteMax - this->byteMin) / 2);
 
 	std::uniform_int_distribution<unsigned char> newByteDist(this->byteMin, this->byteMax);
 
@@ -162,13 +162,13 @@ void Rand::setRealLimits(double from, double to) {
 unsigned char Rand::generateByte() {
 	switch(this->algo) {
 	case RAND_ALGO_STD_RAND:
-		return this->byteMin + std::rand() % (this->byteMax + 1 - this->byteMin);
+		return static_cast<unsigned char>(this->byteMin + std::rand() % (this->byteMax + 1 - this->byteMin));
 
 	case RAND_ALGO_STD_MT19937:
 		return this->byteDist(this->mt);
 
 	case RAND_ALGO_LEHMER32:
-		return this->byteMin + this->lehmer32() % (this->byteMax + 1 - this->byteMin);
+		return static_cast<unsigned char>(this->byteMin + this->lehmer32() % (this->byteMax + 1 - this->byteMin));
 	}
 
 	return 0;
@@ -227,11 +227,11 @@ uint32_t Rand::lehmer32() {
 	this->lehmer += 0xe120fc15;
 
 	uint64_t tmp = static_cast<uint64_t>(this->lehmer) * 0x4a39b70d;
-	uint32_t m1 = (tmp >> 32) ^ tmp;
+	uint32_t m1 = static_cast<uint32_t>((tmp >> 32) ^ tmp);
 
 	tmp = static_cast<uint64_t>(m1) * 0x12fad5c9;
 
-	uint32_t m2 = (tmp >> 32) ^ tmp;
+	uint32_t m2 = static_cast<uint32_t>((tmp >> 32) ^ tmp);
 
 	return m2;
 }

@@ -31,6 +31,9 @@ ExampleSound::~ExampleSound() {}
 
 // run the application
 int ExampleSound::run(int argc, char * argv[]) {
+	UNUSED(argc);
+	UNUSED(argv);
+
 	// setup the engine
 	const std::string name("sound");
 
@@ -113,6 +116,8 @@ void ExampleSound::onCreate() {
 
 // update frame
 void ExampleSound::onUpdate(double elapsedTime) {
+	UNUSED(elapsedTime);
+
 	const double currentTime = this->getTime();
 
 	// clear sound waves that have ended every second
@@ -157,8 +162,8 @@ void ExampleSound::onUpdate(double elapsedTime) {
 	for(int x = 0; x < w; ++x) {
 		const double sound = this->generateSound(0, currentTime + static_cast<double>(x) / w * res);
 
-		int yFrom = halfHeight;
-		int yTo = std::lround(halfHeight + sound * halfHeight);
+		int yFrom = static_cast<int>(std::lround(halfHeight));
+		int yTo = static_cast<int>(std::lround(halfHeight + sound * halfHeight));
 		bool swapped = false;
 
 		if(yFrom > yTo) {
@@ -177,8 +182,8 @@ void ExampleSound::onUpdate(double elapsedTime) {
 			this->draw(
 					x,
 					y,
-					std::lround(255 * red),
-					std::lround(255 - 255 * red),
+					static_cast<unsigned char>(std::lround(255 * red)),
+					static_cast<unsigned char>(std::lround(255 - 255 * red)),
 					0
 			);
 		}
@@ -336,6 +341,8 @@ void ExampleSound::clearSoundWaves() {
 
 // generate sound at the specified time
 double ExampleSound::generateSound(unsigned int channel, double time, bool forThread) {
+	UNUSED(channel);
+
 	if(forThread) {
 		/*
 		 * NOTE:	It is considered bad practise to use locking inside sound output code,

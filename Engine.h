@@ -20,7 +20,7 @@ public:
 	virtual ~Engine();
 
 	void setClearBuffer(bool clear);
-	void setPixelSize(unsigned char size);
+	void setPixelSize(unsigned short size);
 	void setPixelTest(const PixelTest& pixelTest);
 	void disablePixelTest();
 	void setDebugText(const std::string& string);

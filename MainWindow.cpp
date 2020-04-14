@@ -232,8 +232,8 @@ void MainWindow::setPixelTest(const PixelTest& test) {
 void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b) {
 	const auto offsetX = x * this->pixelSize;
 	const auto offsetY = y * this->pixelSize;
-	short limitX = this->pixelSize;
-	auto limitY = this->pixelSize;
+	int limitX = this->pixelSize;
+	int limitY = this->pixelSize;
 
 	if(static_cast<int>(offsetX + limitX) > this->width)
 		limitX = this->width - offsetX;
@@ -461,5 +461,7 @@ void MainWindow::callbackFramebuffer(GLFWwindow * window, int width, int height)
 
 // callback for key event (use GLFW user pointer to jump into class)
 void MainWindow::callbackKey(GLFWwindow * window, int key, int scancode, int action, int mods) {
+	UNUSED(scancode);
+	UNUSED(mods);
 	static_cast<MainWindow *>(glfwGetWindowUserPointer(window))->onKey(key, action);
 }

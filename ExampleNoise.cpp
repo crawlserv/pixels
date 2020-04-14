@@ -13,6 +13,9 @@ ExampleNoise::~ExampleNoise() {}
 
 // run the application
 int ExampleNoise::run(int argc, char * argv[]) {
+	UNUSED(argc);
+	UNUSED(argv);
+
 	const std::string name("noise");
 
 	constexpr int width = 800;
@@ -33,6 +36,8 @@ void ExampleNoise::onCreate() {}
 
 // update frame
 void ExampleNoise::onUpdate(double elapsedTime) {
+	UNUSED(elapsedTime);
+
 	// render noise
 	const int w = this->getWindowWidth();
 	const int h = this->getWindowHeight();

@@ -25,6 +25,8 @@
 #include <thread>		// std::this_thread
 #include <vector>		// std::vector
 
+#define UNUSED(x) (void)(x)
+
 class ExampleSound : Engine {
 public:
 	ExampleSound();

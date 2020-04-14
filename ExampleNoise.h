@@ -14,6 +14,8 @@
 #include <cstdlib>		// EXIT_SUCCESS
 #include <string>		// std::string
 
+#define UNUSED(x) (void)(x)
+
 class ExampleNoise : Engine {
 public:
 	ExampleNoise();

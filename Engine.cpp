@@ -17,7 +17,7 @@ void Engine::setClearBuffer(bool clear) {
 }
 
 // set the actual size of one pixel
-void Engine::setPixelSize(unsigned char size) {
+void Engine::setPixelSize(unsigned short size) {
 	this->window.setPixelSize(size);
 }
 

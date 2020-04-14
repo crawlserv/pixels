@@ -18,6 +18,9 @@ ExampleRects::~ExampleRects() {}
 
 // run the application
 int ExampleRects::run(int argc, char * argv[]) {
+	UNUSED(argc);
+	UNUSED(argv);
+
 	const std::string name("rects");
 
 	constexpr int width = 800;
@@ -37,6 +40,8 @@ void ExampleRects::onCreate() {}
 
 // update frame
 void ExampleRects::onUpdate(double elapsedTime) {
+	UNUSED(elapsedTime);
+
 	// render rectangles
 	const int w = this->getWindowWidth();
 	const int h = this->getWindowHeight();
@@ -119,7 +124,7 @@ void ExampleRects::onUpdate(double elapsedTime) {
 
 // add one rectangle
 void ExampleRects::add() {
-	constexpr float minSize = 0.001f;
+	constexpr double minSize = 0.001f;
 
 	Rect newRect;
 
@@ -145,10 +150,10 @@ void ExampleRects::add() {
 
 // render one rectangle
 void ExampleRects::render(int w, int h, const Rect& rect) {
-	const int absX1 = std::roundf(rect.x1 * w);
-	const int absY1 = std::roundf(rect.y1 * h);
-	const int absX2 = std::roundf(rect.x2 * w);
-	const int absY2 = std::roundf(rect.y2 * h);
+	const int absX1 = static_cast<int>(std::lround(rect.x1 * w));
+	const int absY1 = static_cast<int>(std::lround(rect.y1 * h));
+	const int absX2 = static_cast<int>(std::lround(rect.x2 * w));
+	const int absY2 = static_cast<int>(std::lround(rect.y2 * h));
 
 	if(this->renderBorders) {
 		constexpr unsigned char borderR = 0;

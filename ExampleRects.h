@@ -12,12 +12,14 @@
 #include "Geometry.h"
 #include "Rand.h"
 
-#include <cmath>		// std::roundf
+#include <cmath>		// std::lround
 #include <cstdlib>		// EXIT_SUCCESS
 #include <functional>	// std::bind, std::placeholders
 #include <string>		// std::string, std::to_string
 #include <utility>		// std::swap
 #include <vector>		// std::vector
+
+#define UNUSED(x) (void)(x)
 
 class ExampleRects : Engine {
 	template<typename T>
@@ -30,7 +32,7 @@ class ExampleRects : Engine {
 		Color(T _r, T _g, T _b) : r(_r), g(_g), b(_b) {}
 	};
 
-	using Rect = Geometry::Rectangle<float, Color<unsigned char>>;
+	using Rect = Geometry::Rectangle<double, Color<unsigned char>>;
 
 public:
 	ExampleRects();

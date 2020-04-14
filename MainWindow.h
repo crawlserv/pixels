@@ -20,6 +20,8 @@
 #include "Pixels.h"
 #include "PixelTest.h"
 
+#define UNUSED(x) (void)(x)
+
 class MainWindow {
 public:
 	using ResizeFunction = std::function<void(int, int)>;

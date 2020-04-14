@@ -14,7 +14,7 @@
 #include <stdexcept>	// std::runtime_error
 #include <string>		// std::string
 
-constexpr auto RAND_ALGO_NUM = 3;
+constexpr unsigned char RAND_ALGO_NUM = 3;
 
 class Rand {
 public:

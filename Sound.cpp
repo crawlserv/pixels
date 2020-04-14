@@ -588,7 +588,7 @@ void Sound::threadInit() {
 	}
 
 	// calculate the number of seconds per sample
-	this->secondsPerFrame = 1.f / this->soundIoOutStream->sample_rate;
+	this->secondsPerFrame = 1. / this->soundIoOutStream->sample_rate;
 
 	// done
 	this->initialized = true;
@@ -825,6 +825,10 @@ int Sound::outputDeviceIdToIndex(const std::string& id) {
 
 // helper function to set the current output device and restart the thread if necessary
 void Sound::setOutputDevice(int index) {
+	if(!(this->soundIo))
+		throw std::runtime_error("Sound::setOutputDevice(): this->soundio == nullptr");
+
+
 	bool restart = false;
 
 	if(this->running) {
@@ -833,7 +837,12 @@ void Sound::setOutputDevice(int index) {
 		restart = true;
 	}
 
-	this->outputDeviceIndex = this->defaultOutputDeviceIndex;
+	if(index < 0)
+		this->outputDeviceIndex = this->defaultOutputDeviceIndex;
+	else if(index >= soundio_output_device_count(this->soundIo))
+		throw std::runtime_error("Sound::setOutputDevice(): Invalid output device #" + std::to_string(index));
+	else
+		this->outputDeviceIndex = index;
 
 	auto * tmpDevice = soundio_get_output_device(this->soundIo, this->outputDeviceIndex);
 
@@ -880,7 +889,7 @@ void Sound::writeSampleS16(void * target, double sample) {
 	double range = static_cast<double>(std::numeric_limits<int16_t>::max())
 					- static_cast<double>(std::numeric_limits<int16_t>::min());
 
-	*buffer = sample * range / 2.;
+	*buffer = static_cast<int16_t>(sample * range / 2.);
 }
 
 // write a 32-bit integer sample
@@ -889,14 +898,14 @@ void Sound::writeSampleS32(void * target, double sample) {
 	double range = static_cast<double>(std::numeric_limits<int32_t>::max())
 					- static_cast<double>(std::numeric_limits<int32_t>::min());
 
-	*buffer = sample * range / 2.;
+	*buffer = static_cast<int32_t>(sample * range / 2.);
 }
 
 // write a 32-bit float sample
 void Sound::writeSampleF32(void * target, double sample) {
 	float * buffer = static_cast<float *>(target);
 
-	*buffer = sample;
+	*buffer = static_cast<float>(sample);
 }
 
 // write a 64-bit float sample
