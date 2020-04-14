@@ -8,6 +8,8 @@
 #ifndef SOUND_H_
 #define SOUND_H_
 
+#pragma once
+
 #include <soundio/soundio.h>
 
 #include <atomic>		// std::atomic
@@ -23,6 +25,8 @@ class Sound {
 public:
 	using OutputFunction = std::function<double(unsigned int, double)>;
 	using WriteFunction = std::function<void(void *, double)>;
+
+	static constexpr double epsilon = 0.0001;
 
 	enum Channel {
 		CHANNEL_NONE,
