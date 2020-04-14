@@ -355,7 +355,19 @@ double ExampleSound::generateSound(unsigned int channel, double time, bool forTh
 		return this->generateSoundFrom(time, this->soundWavesForThread);
 	}
 
-	return this->generateSoundFrom(time, this->soundWavesForMain);
+	//const auto sampleStartTime = std::chrono::steady_clock::now();
+
+	const auto result = this->generateSoundFrom(time, this->soundWavesForMain);
+
+	//if(result < - Sound::epsilon || result > Sound::epsilon) {
+	//	const auto sampleTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+	//			std::chrono::steady_clock::now() - sampleStartTime
+	//	).count();
+	//
+	//	std::cout << "t=" << sampleTime << "ns" << std::endl;
+	//}
+
+	return result;
 }
 
 // generate sound at the specified time from the specified source

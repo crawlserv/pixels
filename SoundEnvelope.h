@@ -8,6 +8,8 @@
 #ifndef SOUNDENVELOPE_H_
 #define SOUNDENVELOPE_H_
 
+#pragma once
+
 class SoundEnvelope {
 public:
 	struct ADSRTimes {

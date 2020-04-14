@@ -8,6 +8,8 @@
 #ifndef PIXELS_H_
 #define PIXELS_H_
 
+#pragma once
+
 class Pixels {
 public:
 	Pixels();

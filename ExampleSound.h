@@ -8,6 +8,8 @@
 #ifndef EXAMPLESOUND_H_
 #define EXAMPLESOUND_H_
 
+#pragma once
+
 #include "Engine.h"
 #include "Rand.h"
 #include "Sound.h"

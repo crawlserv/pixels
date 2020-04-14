@@ -8,6 +8,8 @@
 #ifndef EXAMPLENOISE_H_
 #define EXAMPLENOISE_H_
 
+#pragma once
+
 #include "Engine.h"
 #include "Rand.h"
 

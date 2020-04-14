@@ -8,6 +8,8 @@
 #ifndef RAND_H_
 #define RAND_H_
 
+#pragma once
+
 #include <cstdlib>		// std::rand
 #include <limits>		// std::numeric_limits
 #include <random>		// std::mt19937, std::random_device, std::uniform_int_distribution, std::uniform_real_distribution

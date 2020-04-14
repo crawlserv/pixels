@@ -8,6 +8,8 @@
 #ifndef ENGINE_H_
 #define ENGINE_H_
 
+#pragma once
+
 #include <sstream>				// std::fixed, std::ostringstream
 #include <string>				// std::string
 

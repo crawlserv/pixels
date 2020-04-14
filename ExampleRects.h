@@ -8,6 +8,8 @@
 #ifndef EXAMPLERECTS_H_
 #define EXAMPLERECTS_H_
 
+#pragma once
+
 #include "Engine.h"
 #include "Geometry.h"
 #include "Rand.h"
