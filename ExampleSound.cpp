@@ -252,7 +252,7 @@ void ExampleSound::onUpdate(double elapsedTime) {
 	 * 			and choppy sound when computing too many sawtooth waves in parallel
 	 * 			due to their very high calculation time involving multiple sinuses.
 	 * 			Adjust analogSawToothN in SoundWave::get() to change the necessary
-	 * 			computations per sample (being analogSawToothN * std::sin(...)).
+	 * 			computations per sample (being analogSawToothN * Math::approxSin(...)).
 	 */
 	if(this->isKeyPressed(GLFW_KEY_BACKSPACE))
 		this->addSoundWave(SoundWave::SOUNDWAVE_SAWTOOTH);
