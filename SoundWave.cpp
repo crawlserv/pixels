@@ -61,10 +61,10 @@ double SoundWave::get(double time) {
 	if(time > this->properties.startTime + this->properties.length)
 		this->soundEnvelope.off(time);
 
-	const double volume = this->soundEnvelope.get(time) * this->waveVolume;
+	double volume = this->soundEnvelope.get(time) * this->waveVolume;
 
 	if(volume > 1.)
-		throw std::runtime_error("volume larger than 100%");
+		volume = 1.;
 
 	if(volume < 0.0001)
 		return 0.;
@@ -72,11 +72,11 @@ double SoundWave::get(double time) {
 	switch(this->properties.type) {
 	case SOUNDWAVE_SINE:
 		// generate sine wave
-		return volume * std::sin(this->angularVelocity * time);
+		return volume * Math::approxSin(this->angularVelocity * time);
 
 	case SOUNDWAVE_SQUARE:
 		// generate square wave
-		if(std::sin(this->angularVelocity * time) > 0.)
+		if(Math::approxSin(this->angularVelocity * time) > 0.)
 			return volume;
 		else
 			return - volume;
@@ -86,7 +86,7 @@ double SoundWave::get(double time) {
 		return volume
 				* M_2_PI
 				* std::asin(
-						std::sin(
+						Math::approxSin(
 								this->angularVelocity * time
 						)
 				);
@@ -94,10 +94,10 @@ double SoundWave::get(double time) {
 	case SOUNDWAVE_SAWTOOTH:
 	{
 		// generate "smooth" sawtooth wave
-		double result = 0.0;
+		double result = 0.;
 
-		for(double n = 1.0; n < analogSawToothN; n++)
-			result -= (std::sin(n * this->angularVelocity * time)) / n;
+		for(double n = 1.; n < analogSawToothN; n++)
+			result -= (Math::approxSin(n * this->angularVelocity * time)) / n;
 
 		return volume * M_2_PI * result;
 	}
