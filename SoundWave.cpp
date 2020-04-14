@@ -72,11 +72,11 @@ double SoundWave::get(double time) {
 	switch(this->properties.type) {
 	case SOUNDWAVE_SINE:
 		// generate sine wave
-		return volume * Math::approxSin(this->angularVelocity * time);
+		return volume * Math::approxSinTaylor(this->angularVelocity * time);
 
 	case SOUNDWAVE_SQUARE:
 		// generate square wave
-		if(Math::approxSin(this->angularVelocity * time) > 0.)
+		if(Math::approxSinTaylor(this->angularVelocity * time) > 0.)
 			return volume;
 		else
 			return - volume;
@@ -86,7 +86,7 @@ double SoundWave::get(double time) {
 		return volume
 				* M_2_PI
 				* std::asin(
-						Math::approxSin(
+						Math::approxSinTaylor(
 								this->angularVelocity * time
 						)
 				);
@@ -97,7 +97,7 @@ double SoundWave::get(double time) {
 		double result = 0.;
 
 		for(double n = 1.; n < analogSawToothN; n++)
-			result -= (Math::approxSin(n * this->angularVelocity * time)) / n;
+			result -= (Math::approxSinTaylor(n * this->angularVelocity * time)) / n;
 
 		return volume * M_2_PI * result;
 	}
