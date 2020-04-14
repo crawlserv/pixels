@@ -8,11 +8,14 @@
 #ifndef SOUNDWAVE_H_
 #define SOUNDWAVE_H_
 
+#pragma once
+
 #include "Math.h"
 #include "Rand.h"
 #include "SoundEnvelope.h"
 
 #include <cmath>		// M_2_PI, M_PI, M_PI_2, std::asin, std::fmod
+#include <string>		// std::string
 
 // class representing an abstract sound wave that diminishes over time
 class SoundWave {
@@ -49,6 +52,8 @@ public:
 	void setEnvelope(const SoundEnvelope& envelope);
 	void setWaveVolume(double volume);
 	void setAnalogSawToothN(unsigned int n);
+
+	std::string getTypeString() const;
 
 private:
 	// properties and envelope
