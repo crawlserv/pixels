@@ -25,9 +25,14 @@ template<
 class ConcurrentCircular {
 public:
 	ConcurrentCircular(SizeType size)
-			: buffer(new T[size]), bufferSize(size), readHead(0), writeHead(0), isEmpty(true) {
-		if(this->bufferSize < 2)
+			: buffer(nullptr), bufferSize(0), readHead(0), writeHead(0), isEmpty(true) {
+		if(size < 2)
 			throw std::logic_error("Size of circular buffer must be at least 2");
+
+		this->buffer = new T[size];
+
+		if(this->buffer)
+			this->bufferSize = size;
 	}
 
 	virtual ~ConcurrentCircular() {
