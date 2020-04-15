@@ -12,15 +12,15 @@
 
 class SoundEnvelope {
 public:
-	struct ADSRTimes {
+	struct ADRTimes {
 		double attackTime;
 		double decayTime;
 		double releaseTime;
 
-		ADSRTimes(double a, double d, double r) : attackTime(a), decayTime(d), releaseTime(r) {}
+		ADRTimes(double a, double d, double r) : attackTime(a), decayTime(d), releaseTime(r) {}
 	};
 
-	SoundEnvelope(const ADSRTimes& adsr, double startAmplitude, double sustainAmplitude);
+	SoundEnvelope(const ADRTimes& adr, double startAmplitude, double sustainAmplitude);
 	SoundEnvelope(double length);
 	virtual ~SoundEnvelope();
 
@@ -30,8 +30,10 @@ public:
 	double get(double time) const;
 	bool done(double time) const;
 
+	const ADRTimes& getADRTimes() const;
+
 private:
-	ADSRTimes adsrTimes;
+	ADRTimes adrTimes;
 
 	double amplitudeStart;
 	double amplitudeSustain;

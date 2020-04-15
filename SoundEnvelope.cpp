@@ -8,8 +8,8 @@
 #include "SoundEnvelope.h"
 
 // constructor for setting values
-SoundEnvelope::SoundEnvelope(const ADSRTimes& adsr, double startAmplitude, double sustainAmplitude)
-		: adsrTimes(adsr),
+SoundEnvelope::SoundEnvelope(const ADRTimes& adsr, double startAmplitude, double sustainAmplitude)
+		: adrTimes(adsr),
 		  amplitudeStart(startAmplitude),
 		  amplitudeSustain(sustainAmplitude),
 		  timeStarted(0.),
@@ -18,7 +18,7 @@ SoundEnvelope::SoundEnvelope(const ADSRTimes& adsr, double startAmplitude, doubl
 
 // constructor for a simple envelope of the specified length (decay only; amplitude from 1. to 0.)
 SoundEnvelope::SoundEnvelope(double length)
-		: SoundEnvelope(ADSRTimes(0., length, 0.), 1., 0.) {}
+		: SoundEnvelope(ADRTimes(0., length, 0.), 1., 0.) {}
 
 // destructor stub
 SoundEnvelope::~SoundEnvelope() {}
@@ -51,21 +51,21 @@ double SoundEnvelope::get(double time) const {
 		if(relTime < epsilon)
 			return 0.;
 
-		if(relTime < this->adsrTimes.attackTime)
+		if(relTime < this->adrTimes.attackTime)
 			// attack (A) phase
-			result = (relTime / this->adsrTimes.attackTime) * this->amplitudeStart;
-		else if(relTime < this->adsrTimes.attackTime + this->adsrTimes.decayTime)
+			result = (relTime / this->adrTimes.attackTime) * this->amplitudeStart;
+		else if(relTime < this->adrTimes.attackTime + this->adrTimes.decayTime)
 			// decay (D) phase
-			result = (relTime - this->adsrTimes.attackTime) / this->adsrTimes.decayTime
+			result = (relTime - this->adrTimes.attackTime) / this->adrTimes.decayTime
 						* (this->amplitudeSustain - this->amplitudeStart)
 						+ this->amplitudeStart;
 		else
 			// sustain (S) phase
 			result = this->amplitudeSustain;
 	}
-	else if(this->adsrTimes.releaseTime && time < this->timeReleased + this->adsrTimes.releaseTime)
+	else if(this->adrTimes.releaseTime && time < this->timeReleased + this->adrTimes.releaseTime)
 		// release (R) phase (or finished)
-		result = ((time - this->timeReleased) / this->adsrTimes.releaseTime)
+		result = ((time - this->timeReleased) / this->adrTimes.releaseTime)
 				  * (0. - this->amplitudeSustain) + this->amplitudeSustain;
 
 	if(result < epsilon)
@@ -76,5 +76,10 @@ double SoundEnvelope::get(double time) const {
 
 // get whether the envelope has been completely processed at the specified time
 bool SoundEnvelope::done(double time) const {
-	return !(this->isOn) && time > this->timeReleased + this->adsrTimes.releaseTime;
+	return !(this->isOn) && time > this->timeReleased + this->adrTimes.releaseTime;
+}
+
+// get the attack, decay and release time of the envelope
+const SoundEnvelope::ADRTimes& SoundEnvelope::getADRTimes() const {
+	return this->adrTimes;
 }
