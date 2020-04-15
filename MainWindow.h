@@ -8,6 +8,8 @@
 #ifndef MAINWINDOW_H_
 #define MAINWINDOW_H_
 
+#pragma once
+
 #define GL_GLEXT_PROTOTYPES
 
 #include <GLFW/glfw3.h>

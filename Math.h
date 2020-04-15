@@ -8,6 +8,8 @@
 #ifndef MATH_H_
 #define MATH_H_
 
+#pragma once
+
 #define _USE_MATH_DEFINES
 
 #include <cmath>		// std::fmod

@@ -8,6 +8,8 @@
 #ifndef CONCURRENTCIRCULAR_H_
 #define CONCURRENTCIRCULAR_H_
 
+#pragma once
+
 #include <atomic>		// std::atomic
 #include <cstddef>		// std::size_t
 #include <memory>		// std::allocator

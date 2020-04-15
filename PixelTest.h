@@ -8,6 +8,8 @@
 #ifndef PIXELTEST_H_
 #define PIXELTEST_H_
 
+#pragma once
+
 #include <functional>	// std::function
 
 struct PixelTest {

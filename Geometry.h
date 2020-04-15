@@ -8,6 +8,8 @@
 #ifndef GEOMETRY_H_
 #define GEOMETRY_H_
 
+#pragma once
+
 #include <cstddef>	// std::size_t
 #include <deque>	// std::deque
 #include <vector>	// std::vector
