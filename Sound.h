@@ -94,6 +94,9 @@ public:
 	bool isOutputUnderflowOccured();
 	bool isOutputWritingErrorsOccured(std::string& lastErrorOut);
 
+	// getter only for the sound thread
+	double getTimePosition() const;
+
 private:
 	void thread();
 	void threadInit();

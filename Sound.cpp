@@ -476,6 +476,12 @@ bool Sound::isOutputWritingErrorsOccured(std::string& lastErrorOut) {
 	return false;
 }
 
+// get the current position in time of the sound thread (everything before has already been sent to the output device)
+// NOTE:	Should NOT be called from outside the sound thread (i.e. the callbacks of the sound system) !
+double Sound::getTimePosition() const {
+	return this->secondsOffset;
+}
+
 // thread function for the actual sound output
 void Sound::thread() {
 	// initialize thread-related resources
