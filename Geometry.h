@@ -8,8 +8,9 @@
 #ifndef GEOMETRY_H_
 #define GEOMETRY_H_
 
-#include <deque>		// std::deque
-#include <vector>		// std::vector
+#include <cstdlib>	// std::size_t
+#include <deque>	// std::deque
+#include <vector>	// std::vector
 
 namespace Geometry {
 	// generic one-colored rectangle
@@ -56,10 +57,10 @@ namespace Geometry {
 	// add a rectangle and split the clipped rectangles removing the overlapped parts
 	template<typename T, typename C>
 	inline void addAndSplit(std::vector<Rectangle<T, C>>& rects, const Rectangle<T, C>& newRect, T min = 0) {
-		const size_t oldSize = rects.size();
-		std::deque<size_t> toDelete;
+		const std::size_t oldSize = rects.size();
+		std::deque<std::size_t> toDelete;
 
-		for(size_t index = 0; index < oldSize; ++index) {
+		for(std::size_t index = 0; index < oldSize; ++index) {
 			// get reference to current rect
 			const auto& ref = rects.at(index);
 
