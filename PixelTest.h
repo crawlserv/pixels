@@ -21,7 +21,7 @@ struct PixelTest {
 
 	/*
 	 * NOTE:	Debugging will turn the pixels
-	 * 			RED for wich the test fails,
+	 * 			RED for which the test fails,
 	 * 			instead of not drawing them.
 	 */
 	bool debugging;
