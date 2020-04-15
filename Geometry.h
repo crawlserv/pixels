@@ -8,7 +8,7 @@
 #ifndef GEOMETRY_H_
 #define GEOMETRY_H_
 
-#include <cstdlib>	// std::size_t
+#include <cstddef>	// std::size_t
 #include <deque>	// std::deque
 #include <vector>	// std::vector
 

@@ -13,7 +13,7 @@
 #include <GLFW/glfw3.h>
 
 #include <chrono>		// std::chrono
-#include <cstdlib>		// std::size_t
+#include <cstddef>		// std::size_t
 #include <functional>	// std::function, std::placeholders
 #include <stdexcept>	// std::runtime_error
 #include <string>		// std::string, std::to_string
