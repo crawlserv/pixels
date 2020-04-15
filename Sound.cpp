@@ -22,7 +22,7 @@ Sound::Sound()
 		  outputDeviceIndex(-1),
 		  outputSampleRate(44100),
 		  outputChannels(0),
-		  outputMaxFrames(2048),
+		  outputMaxFrames(0),
 		  outputLatency(0.1) {
 	// create soundio context
 	this->soundIo = soundio_create();
@@ -199,9 +199,7 @@ void Sound::setOutputChannels(unsigned int channels) {
 	this->outputChannels = channels;
 }
 
-// set the maximum amount of frames to output at once (default: 1024, zero means unlimited)
-//	NOTE: The same amount of frames will be pre-buffered and this setting therefore affects the latency.
-//		  Although zero means unlimited, a maximum of outputSampleRate / 10 frames (for 100ms) will be buffered.
+// set the maximum amount of frames to output at once (default: 0, zero means unlimited)
 //	WARNING: Low numbers will lead to 'underflow' and a warning will be printed to std::cerr
 //			 that there has not been enough data to write to the output sound device !
 //			 Very low numbers will break the audio output completely !
