@@ -23,7 +23,9 @@ Sound::Sound()
 		  outputSampleRate(44100),
 		  outputChannels(0),
 		  outputMaxFrames(0),
-		  outputLatency(0.1) {
+		  outputLatency(0.01),
+		  isUnderflow(false),
+		  lastWritingError(0) {
 	// create soundio context
 	this->soundIo = soundio_create();
 
@@ -200,28 +202,24 @@ void Sound::setOutputChannels(unsigned int channels) {
 }
 
 // set the maximum amount of frames to output at once (default: 0, zero means unlimited)
-//	WARNING: Low numbers will lead to 'underflow' and a warning will be printed to std::cerr
-//			 that there has not been enough data to write to the output sound device !
+//	WARNING: Low numbers will lead to 'underflow' i.e. not enough data to write to the output sound device !
 //			 Very low numbers will break the audio output completely !
 void Sound::setOutputMaxFrames(unsigned int maxFrames) {
 	this->outputMaxFrames = maxFrames;
 }
 
-// set the desired software latency for the sound output (in seconds, default: 0.1, zero means device default)
-//	WARNING: The device default might be a very high latency (e.g. 2s), better use the in-class default !
-//			 Very low numbers will lead to 'underflow' and a warning will be printed to std::cerr
-//			 that there has not been enough data to write to the output sound device !
+// set the desired software latency for the sound output (in seconds, default: 0.01 i.e. 10ms, zero means device default)
+//	WARNING: The device default might be a very high latency (e.g. 2s), therefore it is better to use the in-class default !
+//			 Very low numbers will lead to 'underflow' i.e. not enough data to write to the output sound device !
 void Sound::setOutputLatency(double latency) {
 	this->outputLatency = latency;
 }
 
 // start the sound system in an extra thread
 void Sound::start(double startTimeInSeconds) {
-	if(this->running) {
-		std::cerr << "Sound::start(): Sound system is already running." << std::endl;
-
-		return;
-	}
+	if(this->running)
+		// sound system is already running
+		return throw std::runtime_error("The sound system has already been started");
 
 	this->started = true;
 	this->secondsOffset = startTimeInSeconds;
@@ -252,14 +250,10 @@ bool Sound::isStarted() const {
 // 	NOTE:	The sound system need to be completely started before you can use this function.
 //			You can use Sound::isStarted() to wait until it is ready.
 int Sound::getOutputSampleRate() const {
-	if(!(this->soundIoOutStream)) {
-		std::cerr
-				<<	"WARNING: Sound::getChannelType(): "
-					"Sound system needs to be started before getting the type of a channel"
-				<<	std::endl;
-
-		return 0;
-	}
+	if(!(this->soundIoOutStream))
+		throw std::runtime_error(
+				"Sound::getChannelType(): Sound system needs to be started before getting the type of a channel"
+		);
 
 	return this->soundIoOutStream->sample_rate;
 }
@@ -268,14 +262,10 @@ int Sound::getOutputSampleRate() const {
 // 	NOTE:	The sound system need to be completely started before you can use this function.
 //			You can use Sound::isStarted() to wait until it is ready.
 std::string Sound::getOutputLayoutName() const {
-	if(!(this->soundIoOutStream)) {
-		std::cerr
-				<<	"WARNING: Sound::getChannelType(): "
-					"Sound system needs to be started before getting the type of a channel"
-				<<	std::endl;
-
-		return 0;
-	}
+	if(!(this->soundIoOutStream))
+		throw std::runtime_error(
+				"Sound::getOutputLayoutName(): Sound system needs to be started before getting the layout of the output"
+		);
 
 	return this->soundIoOutStream->layout.name;
 }
@@ -284,14 +274,10 @@ std::string Sound::getOutputLayoutName() const {
 // 	NOTE:	The sound system need to be completely started before you can use this function.
 //			You can use Sound::isStarted() to wait until it is ready.
 int Sound::getOutputChannels() const {
-	if(!(this->soundIoOutStream)) {
-		std::cerr
-				<<	"WARNING: Sound::getOutputChannelType(): "
-					"Sound system needs to be started before getting the type of a channel"
-				<<	std::endl;
-
-		return 0;
-	}
+	if(!(this->soundIoOutStream))
+		throw std::runtime_error(
+				"Sound::getOutputChannels(): Sound system needs to be started before getting the number of channels"
+		);
 
 	return this->soundIoOutStream->layout.channel_count;
 }
@@ -300,14 +286,10 @@ int Sound::getOutputChannels() const {
 // 	NOTE:	The sound system need to be completely started before you can use this function.
 //			You can use Sound::isStarted() to wait until it is ready.
 double Sound::getOutputLatency() const {
-	if(!(this->soundIoOutStream)) {
-		std::cerr
-				<<	"WARNING: Sound::getOutputChannelType(): "
-					"Sound system needs to be started before getting the type of a channel"
-				<<	std::endl;
-
-		return 0.;
-	}
+	if(!(this->soundIoOutStream))
+		throw std::runtime_error(
+				"Sound::getOutputLatency(): Sound system needs to be started before getting the latency of the output"
+		);
 
 	return this->soundIoOutStream->software_latency;
 }
@@ -316,14 +298,10 @@ double Sound::getOutputLatency() const {
 // 	NOTE:	The sound system need to be completely started before you can use this function.
 //			You can use Sound::isStarted() to wait until it is ready.
 Sound::Channel Sound::getOutputChannelType(unsigned int channel) const {
-	if(!(this->soundIoOutStream)) {
-		std::cerr
-				<<	"WARNING: Sound::getOutputChannelType(): "
-					"Sound system needs to be started before getting the type of a channel"
-				<<	std::endl;
-
-		return CHANNEL_NONE;
-	}
+	if(!(this->soundIoOutStream))
+		throw std::runtime_error(
+				"Sound::getOutputChannelType(): Sound system needs to be started before getting the type of a channel"
+		);
 
 	if(this->soundIoOutStream->layout.channel_count < 0)
 		return CHANNEL_NONE;
@@ -398,14 +376,10 @@ Sound::Channel Sound::getOutputChannelType(unsigned int channel) const {
 // 	NOTE:	The sound system need to be completely started before you can use this function.
 //			You can use Sound::isStarted() to wait until it is ready.
 std::string Sound::getOutputChannelName(unsigned int channel) const {
-	if(!(this->soundIoOutStream)) {
-		std::cerr
-				<<	"WARNING: Sound::getChannelType(): "
-					"Sound system needs to be started before getting the type of a channel"
-				<<	std::endl;
-
-		return "<unknown>";
-	}
+	if(!(this->soundIoOutStream))
+		throw std::runtime_error(
+				"Sound::getChannelName(): Sound system needs to be started before getting the name of a channel"
+		);
 
 	if(this->soundIoOutStream->layout.channel_count < 0)
 		return "<none>";
@@ -476,6 +450,32 @@ std::string Sound::getOutputChannelName(unsigned int channel) const {
 	}
 }
 
+// check whether a underflow error has occured while writing the output
+//	NOTE:	Resets the state of the underflow error when called.
+bool Sound::isOutputUnderflowOccured() {
+	if(this->isUnderflow.load()) {
+		this->isUnderflow.store(false);
+
+		return true;
+	}
+
+	return false;
+}
+
+// check whether errors occured while writing to the output buffer and request them from the sound system
+// NOTE:	Resets the error state, only the last error will be catched.
+bool Sound::isOutputWritingErrorsOccured(std::string& lastErrorOut) {
+	const auto lastError = this->lastWritingError.load();
+
+	if(lastError) {
+		lastErrorOut = soundio_strerror(lastError);
+
+		return true;
+	}
+
+	return false;
+}
+
 // thread function for the actual sound output
 void Sound::thread() {
 	// initialize thread-related resources
@@ -494,24 +494,14 @@ void Sound::threadInit() {
 	// get the output device
 	this->soundIoOutputDevice = soundio_get_output_device(this->soundIo, this->outputDeviceIndex);
 
-	if(!(this->soundIoOutputDevice)) {
-		std::cerr << "Sound::threadInit(): soundio_get_output_device failed." << std::endl;
-
-		this->running = false;
-
-		return;
-	}
+	if(!(this->soundIoOutputDevice))
+		throw std::runtime_error("Sound::threadInit(): soundio_get_output_device failed.");
 
 	// create the output stream
 	this->soundIoOutStream = soundio_outstream_create(this->soundIoOutputDevice);
 
-	if(!(this->soundIoOutStream)) {
-		std::cerr << "Sound::threadInit(): soundio_outstream_create failed." << std::endl;
-
-		this->running = false;
-
-		return;
-	}
+	if(!(this->soundIoOutStream))
+		throw std::runtime_error("Sound::threadInit(): soundio_outstream_create failed.");
 
 	// set output options
 	this->soundIoOutStream->format = SoundIoFormatFloat32NE;
@@ -548,44 +538,31 @@ void Sound::threadInit() {
 		this->soundIoOutStream->format = SoundIoFormatS16NE;
 		this->write = writeSampleS16;
 	}
-	else {
-		std::cerr	<< "Sound::threadInit():"
-						" Sound device does not support"
-						" the available output formats."
-					<< std::endl;
-
-		this->running = false;
-
-		return;
-	}
+	else
+		throw std::runtime_error(
+				"Sound::threadInit(): Sound device does not support the available output formats."
+		);
 
 	// open the output stream
 	const auto errorOpen = soundio_outstream_open(this->soundIoOutStream);
 
-	if(errorOpen) {
-		std::cerr << "Sound::threadInit(): " << soundio_strerror(errorOpen) << "." << std::endl;
-
-		this->running = false;
-
-		return;
-	}
+	if(errorOpen)
+		throw std::runtime_error(
+				"Sound::threadInit(): soundio_outstream_open failed, " + std::string(soundio_strerror(errorOpen))
+		);
 
 	if(this->soundIoOutStream->layout_error)
-		std::cerr
-				<< "Sound::threadInit(): "
-				<< soundio_strerror(this->soundIoOutStream->layout_error)
-				<< std::endl;
+		throw std::runtime_error(
+				"Sound::threadInit(): layout error, " + std::string(soundio_strerror(this->soundIoOutStream->layout_error))
+		);
 
 	// start the output stream
 	const auto errorStart = soundio_outstream_start(this->soundIoOutStream);
 
-	if(errorStart) {
-		std::cerr << "Sound::threadInit(): " << soundio_strerror(errorStart) << "." << std::endl;
-
-		this->running = false;
-
-		return;
-	}
+	if(errorStart)
+		throw std::runtime_error(
+				"Sound::threadInit(): soundio_outstream_start failed, " + std::string(soundio_strerror(errorStart))
+		);
 
 	// calculate the number of seconds per sample
 	this->secondsPerFrame = 1. / this->soundIoOutStream->sample_rate;
@@ -616,13 +593,10 @@ void Sound::onDevicesChanged() {
 	// get default device
 	this->defaultOutputDeviceIndex = soundio_default_output_device_index(this->soundIo);
 
-	if(this->defaultOutputDeviceIndex < 0) {
-		this->running = false;
-
-		std::cerr << "Sound::onDevicesChanged(): Could not get new default output device." << std::endl;
-
-		return;
-	}
+	if(this->defaultOutputDeviceIndex < 0)
+		throw std::runtime_error(
+				"Sound::onDevicesChanged(): Could not get new default output device"
+		);
 
 	if(!(this->outputDeviceId.empty())) {
 		// check whether the index of the current device has changed
@@ -643,7 +617,9 @@ void Sound::onDevicesChanged() {
 void Sound::onBackendDisconnected(int error) {
 	this->running = false;
 
-	std::cerr << "Sound system disconnected: " << soundio_strerror(error) << "." << std::endl;
+	throw std::runtime_error(
+			"Sound system disconnected: " + std::string(soundio_strerror(error))
+	);
 }
 
 // write to the sound output device using the provided callback function
@@ -683,8 +659,8 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 		const auto beginError = soundio_outstream_begin_write(this->soundIoOutStream, &pointerToAreas, &frameCount);
 
 		if(beginError) {
-			// cancel writing on error
-			std::cerr << "Sound::onWrite(): " << soundio_strerror(beginError) << "." << std::endl;
+			// save output error and cancel
+			this->lastWritingError.store(beginError);
 
 			return;
 		}
@@ -709,9 +685,8 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 		const auto endError = soundio_outstream_end_write(this->soundIoOutStream);
 
 		if(endError) {
-			std::cerr << "Sound::onWrite(): " << soundio_strerror(endError) << "." << std::endl;
-
-			this->running = false;
+			// save output error and cancel
+			this->lastWritingError.store(endError);
 
 			return;
 		}
@@ -722,7 +697,7 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 
 // buffer has underflow
 void Sound::onUnderflow() {
-	std::cerr << "UNDERFLOW WARNING: Not enough data to write to the output sound device." << std::endl;
+	this->isUnderflow.store(true);
 }
 
 // delegate on devices changed event into the class
@@ -785,26 +760,20 @@ void Sound::callbackUnderflow(SoundIoOutStream * soundIoOutStream) {
 int Sound::outputDeviceIdToIndex(const std::string& id) {
 	const auto count = soundio_output_device_count(this->soundIo);
 
-	if(!count) {
-		this->running = false;
-
-		std::cerr << "Sound::outputDeviceIdToIndex(): Could not find any output devices." << std::endl;
-
-		return -1;
-	}
+	if(!count)
+		throw std::runtime_error(
+				"Sound::outputDeviceIdToIndex(): Could not find any output devices."
+		);
 
 	int index = -1;
 
 	for(auto n = 0; n < count; ++n) {
 		auto * device = soundio_get_output_device(this->soundIo, n);
 
-		if(!device) {
-			this->running = false;
-
-			std::cerr << "Sound::outputDeviceIdToIndex(): Could not get output device #" << n << "." << std::endl;
-
-			return -1;
-		}
+		if(!device)
+			throw std::runtime_error(
+					"Sound::outputDeviceIdToIndex(): Could not get output device #" + std::to_string(n)
+			);
 
 		const std::string deviceId(device->id);
 
@@ -827,7 +796,6 @@ void Sound::setOutputDevice(int index) {
 	if(!(this->soundIo))
 		throw std::runtime_error("Sound::setOutputDevice(): this->soundio == nullptr");
 
-
 	bool restart = false;
 
 	if(this->running) {
@@ -845,14 +813,10 @@ void Sound::setOutputDevice(int index) {
 
 	auto * tmpDevice = soundio_get_output_device(this->soundIo, this->outputDeviceIndex);
 
-	if(!tmpDevice) {
-		std::cerr	<< "soundio_get_output_device failed for default device #"
-					<< this->outputDeviceIndex
-					<< "."
-					<< std::endl;
-
-		return;
-	}
+	if(!tmpDevice)
+		throw std::runtime_error(
+				"soundio_get_output_device failed for default device #" + std::to_string(this->outputDeviceIndex)
+		);
 
 	this->outputDeviceId = tmpDevice->id;
 	this->outputDeviceName = tmpDevice->name;

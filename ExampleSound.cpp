@@ -189,6 +189,15 @@ void ExampleSound::onUpdate(double elapsedTime) {
 		}
 	}
 
+	// check for errors
+	std::string writingError, errorString;
+
+	if(this->soundSystem.isOutputUnderflowOccured())
+		errorString = ", UNDERFLOW ERROR";
+	else if(this->soundSystem.isOutputWritingErrorsOccured(writingError))
+		errorString += ", ERROR: " + writingError;
+
+
 	// show number of sound waves and current wave resolution
 	this->setDebugText(
 			"n="
@@ -196,6 +205,7 @@ void ExampleSound::onUpdate(double elapsedTime) {
 			+ ", res="
 			+ std::to_string(this->waveResolution)
 			+ "ms"
+			+ errorString
 	);
 
 	// handle keys

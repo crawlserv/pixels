@@ -14,7 +14,6 @@
 
 #include <atomic>		// std::atomic
 #include <functional>	// std::function
-#include <iostream>		// std::cerr, std::endl
 #include <limits>		// std::numeric_limits
 #include <stdexcept>	// std::runtime_error
 #include <string>		// std::string, std::to_string
@@ -92,6 +91,8 @@ public:
 	std::string getOutputLayoutName() const;
 	Channel getOutputChannelType(unsigned int channel) const;
 	std::string getOutputChannelName(unsigned int channel) const;
+	bool isOutputUnderflowOccured();
+	bool isOutputWritingErrorsOccured(std::string& lastErrorOut);
 
 private:
 	void thread();
@@ -141,6 +142,9 @@ private:
 
 	OutputFunction output;
 	WriteFunction write;
+
+	std::atomic<bool> isUnderflow;
+	std::atomic<int> lastWritingError;
 };
 
 #endif /* SOUND_H_ */
