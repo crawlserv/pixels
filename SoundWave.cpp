@@ -7,6 +7,16 @@
 
 #include "SoundWave.h"
 
+// constructor for an empty sound wave
+SoundWave::SoundWave()
+	: properties(Properties(SOUNDWAVE_NONE, 0., 0., 0.)),
+	  soundEnvelope(0.),
+	  period(0.),
+	  angularVelocity(0.),
+	  noiseGeneratorPointer(nullptr),
+	  waveVolume(0.),
+	  analogSawToothN(0) {}
+
 // constructor: set properties of the sound wave, the encompassing envelope and pre-calculate values
 SoundWave::SoundWave(
 		const Properties& properties,
@@ -69,6 +79,9 @@ double SoundWave::get(double time) {
 		return 0.;
 
 	switch(this->properties.type) {
+	case SOUNDWAVE_NONE:
+		return 0.;
+
 	case SOUNDWAVE_SINE:
 		// generate sine wave
 
@@ -171,6 +184,9 @@ void SoundWave::setAnalogSawToothN(unsigned int n) {
 // get the type of the wave as a string
 std::string SoundWave::getTypeString() const {
 	switch(this->properties.type) {
+	case SOUNDWAVE_NONE:
+		return "<none>";
+
 	case SOUNDWAVE_SINE:
 		return "Sine";
 

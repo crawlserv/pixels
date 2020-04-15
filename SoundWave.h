@@ -21,6 +21,7 @@
 class SoundWave {
 public:
 	enum Type {
+		SOUNDWAVE_NONE,
 		SOUNDWAVE_SINE,
 		SOUNDWAVE_SQUARE,
 		SOUNDWAVE_TRIANGLE,
@@ -39,6 +40,7 @@ public:
 				: type(type), frequency(frequency), length(length), startTime(startTime) {}
 	};
 
+	SoundWave();
 	SoundWave(const Properties& properties, Rand * noiseGeneratorPointer = nullptr);
 	SoundWave(const Properties& properties, const SoundEnvelope& envelope, Rand * noiseGeneratorPointer = nullptr);
 	virtual ~SoundWave();
