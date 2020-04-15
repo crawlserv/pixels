@@ -14,8 +14,6 @@
 #include <stdexcept>	// std::logic_error
 #include <vector>		// std::vector
 
-#include <iostream>		// DEBUG
-
 // a simple thread-safe, yet non-locking, circular FIFO buffer with a fixed size
 //	NOTE:	The Container class used for passing multiple values needs ::insert(it, value) and ::size().
 //			The element class T needs a constructor without arguments (or with default values).
@@ -302,50 +300,6 @@ public:
 		this->isEmpty.store(true);
 		this->readHead.store(0);
 		this->writeHead.store(0);
-	}
-
-	void debug() {
-		SizeType currentReadHead = 0;
-		SizeType currentWriteHead = 0;
-		State currentState = this->getState(currentReadHead, currentWriteHead);
-
-		for(SizeType n = 0; n < this->bufferSize; ++n) {
-			std::cout << '|';
-
-			if(currentState == STATE_FULL) {
-				if(currentReadHead == n)
-					std::cout << "WR";
-				else
-					std::cout << "__";
-			}
-			else {
-				if(currentReadHead == n)
-					std::cout << 'R';
-				else
-					std::cout << '_';
-
-				if(currentWriteHead == n)
-					std::cout << 'W';
-				else
-					std::cout << '_';
-			}
-		}
-
-		const bool empty = this->empty();
-
-		if(empty)
-			std::cout << " EMPTY";
-		else if(this->full())
-			std::cout << " FULL";
-		else
-			std::cout << " n=" << this->size();
-
-		if(!empty) {
-			std::cout << ", f=";
-			std::cout << this->buffer[this->readHead];
-		}
-
-		std::cout << std::endl;
 	}
 
 	// copy constructor
