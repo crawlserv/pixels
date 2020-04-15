@@ -16,6 +16,9 @@ ExampleSound::ExampleSound()
 		  randomGenerator(Rand::RAND_ALGO_LEHMER32),
 		  noiseGeneratorMain(Rand::RAND_ALGO_LEHMER32),
 		  noiseGeneratorThread(Rand::RAND_ALGO_LEHMER32),
+		  soundWavesToThread(100),
+		  isRemoveOldSoundWaves(false),
+		  isClearSoundWaves(false),
 		  lastClearTime(0.) {
 	// setup random generator
 	this->randomGenerator.setRealLimits(0.1, 1.5);		// wave lengths between 0.1 and 1.5 seconds
@@ -122,22 +125,6 @@ void ExampleSound::onUpdate(double elapsedTime) {
 
 	// clear sound waves that have ended every second
 	if(currentTime - this->lastClearTime > 1.) {
-		// clear data for the sound thread
-		{
-			std::lock_guard<std::mutex> threadDataLock(this->lockSoundWavesForThread);
-
-			this->soundWavesForThread.erase(
-					std::remove_if(
-							this->soundWavesForThread.begin(),
-							this->soundWavesForThread.end(),
-							[&currentTime](const auto& wave) -> bool {
-								return wave.done(currentTime);
-							}
-					),
-					this->soundWavesForThread.end()
-			);
-		}
-
 		// clear data for the main thread
 		this->soundWavesForMain.erase(
 				std::remove_if(
@@ -150,6 +137,10 @@ void ExampleSound::onUpdate(double elapsedTime) {
 				this->soundWavesForMain.end()
 		);
 
+		// notify the sound thread to remove old sound waves
+		this->isRemoveOldSoundWaves.store(true);
+
+		// save current time
 		this->lastClearTime = currentTime;
 	}
 
@@ -196,7 +187,6 @@ void ExampleSound::onUpdate(double elapsedTime) {
 		errorString = ", UNDERFLOW ERROR";
 	else if(this->soundSystem.isOutputWritingErrorsOccured(writingError))
 		errorString += ", ERROR: " + writingError;
-
 
 	// show number of sound waves and current wave resolution
 	this->setDebugText(
@@ -262,8 +252,9 @@ void ExampleSound::onUpdate(double elapsedTime) {
 	 * 			and choppy sound when computing too many sawtooth waves in parallel
 	 * 			due to their very high calculation time involving multiple sinuses.
 	 * 			Adjust analogSawToothN in SoundWave::get() to change the necessary
-	 * 			computations per sample (being analogSawToothN * Math::approxSin(...)).
+	 * 			computations per sample (analogSawToothN * Math::approxSinQuad(...)).
 	 */
+
 	if(this->isKeyPressed(GLFW_KEY_BACKSPACE))
 		this->addSoundWave(SoundWave::SOUNDWAVE_SAWTOOTH);
 
@@ -288,9 +279,10 @@ void ExampleSound::onDestroy() {
 	// stop the sound system
 	this->soundSystem.stop();
 
-	// clear the sound waves
-	std::vector<SoundWave>().swap(this->soundWavesForMain);
-	std::vector<SoundWave>().swap(this->soundWavesForThread);
+	// clear sound waves
+	this->soundWavesForMain.clear();
+	this->soundWavesForThread.clear();
+	this->soundWavesToThread.clear();
 }
 
 // add a sound wave
@@ -322,18 +314,21 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 
 	this->soundWavesForMain.back().start(start);
 
-	// add sound wave to the sound thread and play it immediately
-	{
-		std::lock_guard<std::mutex> threadDataLock(this->lockSoundWavesForThread);
+	// add sound wave to the circular buffer for the sound thread and play it "immediately"
+	SoundWave soundWaveForThread(
+			SoundWave::Properties(type, frequency, length, start),
+			envelope,
+			&(this->noiseGeneratorThread)
+	);
 
-		this->soundWavesForThread.emplace_back(
-				SoundWave::Properties(type, frequency, length, start),
-				envelope,
-				&(this->noiseGeneratorThread)
-		);
+	soundWaveForThread.start(start);
 
-		this->soundWavesForThread.back().start(start);
-	}
+	// try to add the sound wave to the circular buffer that communicates with the sound thread
+	//	as long as the buffer still has capacity (i.e. is not cleared),
+	while(
+			!(this->soundWavesToThread.write(soundWaveForThread))
+			&& this->soundWavesToThread.capacity()
+	) std::this_thread::yield(); // in the meantime, yield some execution time to other threads
 }
 
 // clear all sound waves
@@ -341,43 +336,49 @@ void ExampleSound::clearSoundWaves() {
 	// clear data for the main thread
 	std::vector<SoundWave>().swap(this->soundWavesForMain);
 
-	// clear data for the sound thread
-	{
-		std::lock_guard<std::mutex> threadDataLock(this->lockSoundWavesForThread);
-
-		std::vector<SoundWave>().swap(this->soundWavesForThread);
-	}
+	// notify the sound thread to clear its data
+	this->isClearSoundWaves.store(true);
 }
 
 // generate sound at the specified time
 double ExampleSound::generateSound(unsigned int channel, double time, bool forThread) {
 	UNUSED(channel);
 
-	if(forThread) {
-		/*
-		 * NOTE:	It is considered bad practise to use locking inside sound output code,
-		 * 			because it runs the risk of temporary breakdowns in the sound output.
-		 * 			Keep that in mind if you want to dive deeper into audio programming !
-		 */
+	if(forThread) {	/* inside sound thread */
+		// add new sound waves
+		const auto newSoundWaves = this->soundWavesToThread.read();
 
-		std::lock_guard<std::mutex> threadDataLock(this->lockSoundWavesForThread);
+		this->soundWavesForThread.insert(this->soundWavesForThread.end(), newSoundWaves.begin(), newSoundWaves.end());
+
+		if(this->isRemoveOldSoundWaves.load()) {
+			// clear old sound waves
+			const auto timePosition = this->soundSystem.getTimePosition();
+
+			this->soundWavesForThread.erase(
+					std::remove_if(
+							this->soundWavesForThread.begin(),
+							this->soundWavesForThread.end(),
+							[&timePosition](const auto& wave) -> bool {
+								return wave.done(timePosition);
+							}
+					),
+					this->soundWavesForThread.end()
+			);
+
+			this->isRemoveOldSoundWaves.store(false);
+		}
+
+		if(this->isClearSoundWaves.load()) {
+			// clear all sound waves
+			this->soundWavesForThread.clear();
+
+			this->isClearSoundWaves.store(false);
+		}
 
 		return this->generateSoundFrom(time, this->soundWavesForThread);
 	}
 
-	//const auto sampleStartTime = std::chrono::steady_clock::now();
-
-	const auto result = this->generateSoundFrom(time, this->soundWavesForMain);
-
-	//if(result < - Sound::epsilon || result > Sound::epsilon) {
-	//	const auto sampleTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
-	//			std::chrono::steady_clock::now() - sampleStartTime
-	//	).count();
-	//
-	//	std::cout << "t=" << sampleTime << "ns" << std::endl;
-	//}
-
-	return result;
+	return this->generateSoundFrom(time, this->soundWavesForMain);
 }
 
 // generate sound at the specified time from the specified source
