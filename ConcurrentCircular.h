@@ -150,7 +150,7 @@ public:
 			break;
 
 		case STATE_READ_BEFORE_WRITE:
-			// elements can be written from the read head to one before the write head
+			// elements can be read from the read head to one before the write head
 			readLinear = currentWriteHead - currentReadHead;
 
 			break;
