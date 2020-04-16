@@ -14,15 +14,15 @@ ExampleSound::ExampleSound()
 		  masterVolume(0.7),
 		  maxVolume(0.8),
 		  randomGenerator(Rand::RAND_ALGO_LEHMER32),
-		  noiseGeneratorMain(Rand::RAND_ALGO_LEHMER32),
-		  noiseGeneratorThread(Rand::RAND_ALGO_LEHMER32),
-		  soundWavesToThread(100),
+		  noiseGenerator(Rand::RAND_ALGO_LEHMER32),
+		  soundWavesToThread(50),
 		  isRemoveOldSoundWaves(false),
 		  isClearSoundWaves(false),
 		  lastClearTime(0.) {
-	// setup random generator
+	// setup random generators
 	this->randomGenerator.setRealLimits(0.1, 1.5);		// wave lengths between 0.1 and 1.5 seconds
 	this->randomGenerator.setByteLimits(0, 47);			// 48 tones over three octaves
+	this->noiseGenerator.setRealLimits(-1., 1.);
 
 	// reserve memory for up to a hundred (simultaneous) sound waves
 	this->soundWavesForMain.reserve(100);
@@ -262,10 +262,10 @@ void ExampleSound::onUpdate(double elapsedTime) {
 		this->addSoundWave(SoundWave::SOUNDWAVE_SAWTOOTH);
 
 	if(this->isKeyPressed(GLFW_KEY_N))
-		this->addSoundWave(SoundWave::SOUNDWAVE_NOISE);
+		this->addSoundWave(SoundWave::SOUNDWAVE_NOISE_PRECALCULATED);
 
 	if(this->isKeyRepeated(GLFW_KEY_N))
-		this->addSoundWave(SoundWave::SOUNDWAVE_NOISE);
+		this->addSoundWave(SoundWave::SOUNDWAVE_NOISE_PRECALCULATED);
 
 	if(this->isKeyPressed(GLFW_KEY_ESCAPE))
 		this->clearSoundWaves();
@@ -293,23 +293,42 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 
 	const double frequency = octaveBase * std::pow(twelfthRootOf2, this->randomGenerator.generateByte());
 	const double length = this->randomGenerator.generateReal();
+
+	// save start time
 	const double start = this->getTime();
+
+	// set noise resolution (only part of the samples are recommended, because they need to be copied to the sound hardware)
+	constexpr double noiseResolution = 1.;
 
 	// set your envelope here
 	//const SoundEnvelope envelope(SoundEnvelope::ADSRTimes(0., length, 0.), 1., 0.);
-	const SoundEnvelope envelope(SoundEnvelope::ADSRTimes(0.1, 0.01, 0.2), 1., 0.8);
+	const SoundEnvelope envelope(SoundEnvelope::ADRTimes(0.1, 0.01, 0.2), 1., 0.8);
 
-	/*
-	 * NOTE:	Noise will be generated on-the-fly and therefore won't be rendered correctly,
-	 * 			another pseudo-random noise will be rendered instead substituting for the
-	 * 			actual noise that is being sent to the output sound device.
-	 */
+	// generate noise if necessary
+	std::vector<double> noise;
+	double samplesPerSecond = 0.;
+
+	if(type == SoundWave::SOUNDWAVE_NOISE_PRECALCULATED) {
+		samplesPerSecond = this->soundSystem.getOutputSampleRate() / (length + envelope.getADRTimes().decayTime);
+
+		const auto samples =
+				static_cast<std::size_t>(
+						(length + envelope.getADRTimes().releaseTime) * samplesPerSecond * noiseResolution
+				) + 1;
+
+		noise.reserve(samples);
+
+		for(std::size_t n = 0; n < samples; ++n)
+			noise.push_back(this->noiseGenerator.generateReal());
+	}
 
 	// add sound wave to the main thread and render it immediately
 	this->soundWavesForMain.emplace_back(
 			SoundWave::Properties(type, frequency, length, start),
 			envelope,
-			&(this->noiseGeneratorMain)
+			nullptr,
+			&noise,
+			samplesPerSecond
 	);
 
 	this->soundWavesForMain.back().start(start);
@@ -318,7 +337,9 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 	SoundWave soundWaveForThread(
 			SoundWave::Properties(type, frequency, length, start),
 			envelope,
-			&(this->noiseGeneratorThread)
+			nullptr,
+			&noise,
+			samplesPerSecond
 	);
 
 	soundWaveForThread.start(start);
@@ -346,12 +367,14 @@ double ExampleSound::generateSound(unsigned int channel, double time, bool forTh
 
 	if(forThread) {	/* inside sound thread */
 		// add new sound waves
-		const auto newSoundWaves = this->soundWavesToThread.read();
+		std::vector<SoundWave> newSoundWaves;
+
+		this->soundWavesToThread.readAll(newSoundWaves);
 
 		this->soundWavesForThread.insert(this->soundWavesForThread.end(), newSoundWaves.begin(), newSoundWaves.end());
 
 		if(this->isRemoveOldSoundWaves.load()) {
-			// clear old sound waves
+			// clear old sound waves that are not needed anymore
 			const auto timePosition = this->soundSystem.getTimePosition();
 
 			this->soundWavesForThread.erase(
