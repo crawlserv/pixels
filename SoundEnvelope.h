@@ -18,9 +18,11 @@ public:
 		double releaseTime;
 
 		ADRTimes(double a, double d, double r) : attackTime(a), decayTime(d), releaseTime(r) {}
+		ADRTimes() : ADRTimes(0., 0., 0.) {}
 	};
 
 	SoundEnvelope(const ADRTimes& adr, double startAmplitude, double sustainAmplitude);
+	SoundEnvelope();
 	SoundEnvelope(double length);
 	virtual ~SoundEnvelope();
 

@@ -16,6 +16,8 @@ SoundEnvelope::SoundEnvelope(const ADRTimes& adsr, double startAmplitude, double
 		  timeReleased(0.),
 		  isOn(false) {}
 
+SoundEnvelope::SoundEnvelope() : SoundEnvelope(ADRTimes(), 0., 0.) {}
+
 // constructor for a simple envelope of the specified length (decay only; amplitude from 1. to 0.)
 SoundEnvelope::SoundEnvelope(double length)
 		: SoundEnvelope(ADRTimes(0., length, 0.), 1., 0.) {}
