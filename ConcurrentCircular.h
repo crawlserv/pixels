@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <algorithm>	// std::swap
 #include <atomic>		// std::atomic
 #include <cstddef>		// std::size_t
 #include <memory>		// std::allocator
@@ -17,7 +18,8 @@
 #include <vector>		// std::vector
 
 // a simple thread-safe, yet non-locking, circular FIFO buffer with a fixed size
-//	NOTE:	The Container class used for passing multiple values needs ::insert(it, value) and ::size().
+//	NOTE:	The Container class used for passing multiple values needs to provide
+//			the member functions ::insert(it, value), ::size(), and ::swap(ref).
 //			The element class T needs a constructor without arguments (or with default values).
 template<
 		typename T,
@@ -26,6 +28,7 @@ template<
 		>
 class ConcurrentCircular {
 public:
+	// constructor to create a circular buffer with the specified size
 	ConcurrentCircular(SizeType size)
 			: buffer(nullptr), bufferSize(0), readHead(0), writeHead(0), isEmpty(true) {
 		if(size < 2)
@@ -37,6 +40,7 @@ public:
 			this->bufferSize = size;
 	}
 
+	// destructor deallocating the memory used
 	virtual ~ConcurrentCircular() {
 		if(this->buffer) {
 			delete[] this->buffer;
@@ -96,7 +100,9 @@ public:
 			return false;
 
 		// read next element, i.e. element at the read head
-		out = this->buffer[currentReadHead];
+		using std::swap;
+
+		swap(out, this->buffer[currentReadHead]);
 
 		// check whether read head would be moved at the end
 		++currentReadHead;
@@ -115,7 +121,7 @@ public:
 	}
 
 	// read all available elements, return an empty container if none were available
-	Container<T> read() {
+	void readAll(Container<T>& out, SizeType max = 0) {
 		SizeType currentReadHead = 0;
 		SizeType currentWriteHead = 0;
 		State currentState = this->getState(currentReadHead, currentWriteHead);
@@ -131,7 +137,9 @@ public:
 		switch(currentState) {
 		case STATE_EMPTY:
 			// no elements can be read from an empty buffer
-			return Container<T>();
+			Container<T>().swap(out);
+
+			return;
 
 		case STATE_FULL:
 			// elements can be read from the read head to the end of the buffer
@@ -156,17 +164,27 @@ public:
 			break;
 		}
 
+		if(max) {
+			if(readLinear > max) {
+				readLinear = max;
+
+				readCircular = 0;
+			}
+			else if(readLinear + readCircular > max)
+				readCircular = max - readLinear;
+		}
+
 		Container<T> result;
 
 		reserve(result, readLinear + readCircular);
 
 		// read from the read head towards the end of the buffer
-		for(SizeType n = 0; n < readLinear; ++n)
-			result.insert(result.end(), this->buffer[currentReadHead + n]);
+		T * readFrom = this->buffer + currentReadHead;
+
+		result.insert(result.end(), readFrom, readFrom + readLinear);
 
 		// read from the beginning of the buffer towards the write head
-		for(SizeType n = 0; n < readCircular; ++n)
-			result.insert(result.end(), this->buffer[n]);
+		result.insert(result.end(), this->buffer, this->buffer + readCircular);
 
 		// check whether read head would be moved at or beyond the end
 		currentReadHead += readLinear + readCircular;
@@ -180,11 +198,14 @@ public:
 		// update read head
 		this->readHead.store(currentReadHead);
 
-		return result;
+		using std::swap;
+
+		swap(result, out);
 	}
 
 	// write one element if possible, return whether there was enough space in the buffer
-	bool write(const T& in) {
+	//	NOTE:	The referenced element will be SWAPPED INTO the buffer and therefore not usable afterwards !
+	bool write(T& in) {
 		if(!(this->bufferSize))
 			throw std::out_of_range("Cannot read from empty circular buffer");
 
@@ -197,7 +218,9 @@ public:
 			return false;
 
 		// overwrite next element, i.e. element at current write head
-		this->buffer[currentWriteHead] = in;
+		using std::swap;
+
+		swap(this->buffer[currentWriteHead], in);
 
 		// check whether write head would be moved at the end
 		++currentWriteHead;
@@ -216,7 +239,8 @@ public:
 	}
 
 	// write specified elements if possible, return the number of elements that could be written
-	SizeType write(const Container<T>& in) {
+	//	NOTE:	The elements inside the container will be SWAPPED INTO the buffer and therefore not usable afterwards !
+	SizeType write(Container<T>& in) {
 		if(!(this->bufferSize) || in.empty())
 			return 0;
 
@@ -261,23 +285,29 @@ public:
 		}
 
 		// write from the write head towards the end of the buffer
-		SizeType written = 0;
+		SizeType writeLinear = std::min(freeLinear, in.size());
 
-		for(; written < freeLinear && written < in.size();) {
-			this->buffer[writeHead + written] = in[written];
+		T * writeTo = this->buffer + writeHead;
 
-			++written;
+		for(unsigned int n = 0; n < writeLinear; ++n) {
+			using std::swap;
+
+			swap(writeTo[n], in.data()[n]);
 		}
 
 		// write from the beginning of the buffer towards the read head
-		for(SizeType n = 0; n < freeCircular && written < in.size(); ++n) {
-			this->buffer[n] = in[written];
+		SizeType writeCircular = std::min(freeCircular, in.size() - writeLinear);
 
-			++written;
+		T * writeFrom = in.data() + writeLinear;
+
+		for(unsigned int n = 0; n < writeCircular; ++n) {
+			using std::swap;
+
+			swap(this->buffer[n], writeFrom[n]);
 		}
 
 		// update write head
-		currentWriteHead += written;
+		currentWriteHead += writeLinear + writeCircular;
 
 		if(currentWriteHead >= this->bufferSize)
 			// flip write head around the end of the buffer
@@ -286,10 +316,10 @@ public:
 		this->writeHead.store(currentWriteHead);
 
 		// check whether buffer was empty
-		if(currentState == STATE_EMPTY && written)
+		if(currentState == STATE_EMPTY && (writeLinear || writeCircular))
 			this->isEmpty.store(false);
 
-		return written;
+		return writeLinear + writeCircular;
 	}
 
 	// clear the buffer and free its memory (cannot be used anymore afterwards)
@@ -326,35 +356,22 @@ public:
 
 	// copy operator
 	ConcurrentCircular& operator=(const ConcurrentCircular& other) {
-		// clear current buffer
-		this->bufferSize = 0;
-		this->readHead.store(0);
-		this->writeHead.store(0);
-		this->isEmpty.store(true);
-
-		if(this->buffer) {
-			delete[] this->buffer;
-
-			this->buffer = nullptr;
-		}
+		this->buffer = nullptr;
 
 		this->buffer = new T[other.bufferSize];
+		this->bufferSize = other.bufferSize;
 
-		if(this->buffer) {
-			this->bufferSize = other.bufferSize;
+		for(SizeType n = 0; n < this->bufferSize; ++n)
+			this->buffer[n] = other.buffer[n];
 
-			for(SizeType n = 0; n < this->bufferSize; ++n)
-				this->buffer[n] = other.buffer[n];
-
-			this->readHead.store(other.readHead.load());
-			this->writeHead.store(other.writeHead.load());
-			this->isEmpty.store(other.isEmpty.load());
-		}
+		this->isFull.store(other.isFull.load());
+		this->readHead.store(other.readHead.load());
+		this->writeHead.store(other.writeHead.load());
 
 		return *this;
 	}
 
-	// not moveable
+	// the buffer is NOT moveable !
 	ConcurrentCircular(ConcurrentCircular&&) = delete;
 	ConcurrentCircular& operator=(ConcurrentCircular&&) = delete;
 
@@ -381,15 +398,17 @@ private:
 		return STATE_WRITE_BEFORE_READ;
 	}
 
-	// optional reserve function for container
+	// optional reserve function for the container
 	static auto reserve(Container<T>& c, SizeType n)
 	-> decltype(c.reserve(n), void()) {
 		return c.reserve(n);
 	}
 
+	// pointer to and size of the allocated memory
 	T * buffer;
 	SizeType bufferSize;
 
+	// atomic reading/writing state
 	std::atomic<SizeType> readHead;
 	std::atomic<SizeType> writeHead;
 	std::atomic<bool> isEmpty;
