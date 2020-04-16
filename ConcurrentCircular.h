@@ -18,7 +18,8 @@
 #include <vector>		// std::vector
 
 // a simple thread-safe, yet non-locking, circular FIFO buffer with a fixed size
-//	NOTE:	The Container class used for passing multiple values needs to provide
+//	NOTE:	Thread-safe for TWO threads, one reader and one writer only.
+//			The Container class used for passing multiple values needs to provide
 //			the member functions ::insert(it, value), ::size(), and ::swap(ref).
 //			The element class T needs a constructor without arguments (or with default values).
 template<
@@ -91,7 +92,7 @@ public:
 	}
 
 	// read one element if available, return whether one was available
-	bool read(T& out) {
+	bool pop(T& out) {
 		SizeType currentReadHead = 0;
 		SizeType currentWriteHead = 0;
 
@@ -121,7 +122,7 @@ public:
 	}
 
 	// read all or up to max available elements, give back an empty container if no elements were available
-	void readAll(Container<T>& out, SizeType max = 0 /* zero means infinite */) {
+	void pop(Container<T>& out, SizeType max = 0 /* zero means infinite */) {
 		SizeType currentReadHead = 0;
 		SizeType currentWriteHead = 0;
 		State currentState = this->getState(currentReadHead, currentWriteHead);
@@ -216,7 +217,7 @@ public:
 
 	// write one element if possible, return whether there was enough space in the buffer
 	//	NOTE:	The referenced element will be SWAPPED INTO the buffer and therefore not usable afterwards !
-	bool write(T& in) {
+	bool push(T& in) {
 		if(!(this->bufferSize))
 			throw std::out_of_range("Cannot read from empty circular buffer");
 
@@ -252,7 +253,7 @@ public:
 
 	// write specified elements if possible, return the number of elements that could be written
 	//	NOTE:	The elements INSIDE the container will be SWAPPED INTO the buffer and therefore not usable afterwards !
-	SizeType write(Container<T>& in) {
+	SizeType push(Container<T>& in) {
 		if(!(this->bufferSize) || in.empty())
 			return 0;
 
