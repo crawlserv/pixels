@@ -297,7 +297,7 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 	// save start time
 	const double start = this->getTime();
 
-	// set noise resolution (only part of the samples are recommended, because they need to be copied to the sound hardware)
+	// set noise resolution (i.e. the percentage of actually pre-calculated samples)
 	constexpr double noiseResolution = 1.;
 
 	// set your envelope here
