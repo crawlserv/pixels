@@ -347,7 +347,7 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 	// try to add the sound wave to the circular buffer that communicates with the sound thread
 	//	as long as the buffer still has capacity (i.e. is not cleared),
 	while(
-			!(this->soundWavesToThread.write(soundWaveForThread))
+			!(this->soundWavesToThread.push(soundWaveForThread))
 			&& this->soundWavesToThread.capacity()
 	) std::this_thread::yield(); // in the meantime, yield some execution time to other threads
 }
@@ -369,7 +369,7 @@ double ExampleSound::generateSound(unsigned int channel, double time, bool forTh
 		// add new sound waves
 		std::vector<SoundWave> newSoundWaves;
 
-		this->soundWavesToThread.readAll(newSoundWaves);
+		this->soundWavesToThread.pop(newSoundWaves);
 
 		this->soundWavesForThread.insert(this->soundWavesForThread.end(), newSoundWaves.begin(), newSoundWaves.end());
 
