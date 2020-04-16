@@ -21,6 +21,7 @@
 #include <atomic>		// std::atomic
 #include <chrono>		// std::chrono
 #include <cmath>		// std::fmod, std::lround, std::pow
+#include <cstddef>		// std::size_t
 #include <cstdlib>		// EXIT_SUCCESS
 #include <functional>	// std::bind, std::placeholders
 #include <iostream>		// std::cout, std::endl
@@ -57,8 +58,7 @@ private:
 	double maxVolume;
 
 	Rand randomGenerator;
-	Rand noiseGeneratorMain;
-	Rand noiseGeneratorThread;
+	Rand noiseGenerator;
 	Sound soundSystem;
 
 	/*
