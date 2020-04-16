@@ -104,13 +104,13 @@ public:
 
 		swap(out, this->buffer[currentReadHead]);
 
-		// check whether read head would be moved at the end
+		// check whether the read head would be moved to the end of the buffer
 		++currentReadHead;
 
 		if(currentReadHead == this->bufferSize)
 			currentReadHead = 0;
 
-		// check whether buffer will be empty
+		// check whether the buffer will be empty
 		if(currentReadHead == currentWriteHead)
 			this->isEmpty.store(true);
 
@@ -164,16 +164,25 @@ public:
 			break;
 		}
 
+		// make sure the maximum of elements to read is respected
+		bool readAll = true;
+
 		if(max) {
 			if(readLinear > max) {
 				readLinear = max;
 
 				readCircular = 0;
+
+				readAll = false;
 			}
-			else if(readLinear + readCircular > max)
+			else if(readLinear + readCircular > max) {
 				readCircular = max - readLinear;
+
+				readAll = false;
+			}
 		}
 
+		// reserve memory for the result if possible
 		Container<T> result;
 
 		reserve(result, readLinear + readCircular);
@@ -186,18 +195,20 @@ public:
 		// read from the beginning of the buffer towards the write head
 		result.insert(result.end(), this->buffer, this->buffer + readCircular);
 
-		// check whether read head would be moved at or beyond the end
+		// check whether the read head would be moved to the end or beyond the end of the buffer
 		currentReadHead += readLinear + readCircular;
 
 		if(currentReadHead >= this->bufferSize)
 			currentReadHead -= this->bufferSize;
 
-		// set buffer to empty
-		this->isEmpty.store(true);
+		// set the buffer to empty if applicable
+		if(readAll)
+			this->isEmpty.store(true);
 
 		// update read head
 		this->readHead.store(currentReadHead);
 
+		// swap out the result
 		using std::swap;
 
 		swap(result, out);
@@ -211,6 +222,7 @@ public:
 
 		SizeType currentReadHead = 0;
 		SizeType currentWriteHead = 0;
+
 		State currentState = this->getState(currentReadHead, currentWriteHead);
 
 		if(currentState == STATE_FULL)
@@ -222,7 +234,7 @@ public:
 
 		swap(this->buffer[currentWriteHead], in);
 
-		// check whether write head would be moved at the end
+		// check whether the write head would be moved to the end of the buffer
 		++currentWriteHead;
 
 		if(currentWriteHead == this->bufferSize)
@@ -239,13 +251,14 @@ public:
 	}
 
 	// write specified elements if possible, return the number of elements that could be written
-	//	NOTE:	The elements inside the container will be SWAPPED INTO the buffer and therefore not usable afterwards !
+	//	NOTE:	The elements INSIDE the container will be SWAPPED INTO the buffer and therefore not usable afterwards !
 	SizeType write(Container<T>& in) {
 		if(!(this->bufferSize) || in.empty())
 			return 0;
 
 		SizeType currentReadHead = 0;
 		SizeType currentWriteHead = 0;
+
 		State currentState = this->getState(currentReadHead, currentWriteHead);
 
 		/*
@@ -306,19 +319,22 @@ public:
 			swap(this->buffer[n], writeFrom[n]);
 		}
 
-		// update write head
+		// check whether the write heand would be moved to the end or beyond the end of the buffer
 		currentWriteHead += writeLinear + writeCircular;
 
 		if(currentWriteHead >= this->bufferSize)
-			// flip write head around the end of the buffer
+			// flip the write head around the end of the buffer
 			currentWriteHead -= this->bufferSize;
 
+		// update the write head
 		this->writeHead.store(currentWriteHead);
 
-		// check whether buffer was empty
+		// check whether the buffer was empty
 		if(currentState == STATE_EMPTY && (writeLinear || writeCircular))
+			// set the buffer to non-empty
 			this->isEmpty.store(false);
 
+		// return the number of actually written elements
 		return writeLinear + writeCircular;
 	}
 
@@ -326,14 +342,17 @@ public:
 	//	NOTE:	This method is not thread-safe and should only be used when both
 	//			the reading and the writing thread have finished using the buffer !
 	void clear() {
+		// set the buffer size to zero
 		this->bufferSize = 0;
 
+		// free allocated memory
 		if(this->buffer) {
 			delete[] buffer;
 
 			this->buffer = nullptr;
 		}
 
+		// reset the state of the buffer
 		this->isEmpty.store(true);
 		this->readHead.store(0);
 		this->writeHead.store(0);
@@ -376,7 +395,7 @@ public:
 	ConcurrentCircular& operator=(ConcurrentCircular&&) = delete;
 
 private:
-	// return the state of the circular buffer
+	// the four possible states of the circular buffer
 	enum State {
 		STATE_EMPTY = 0,				// the buffer is empty
 		STATE_READ_BEFORE_WRITE = 1,	// the read head is before the write head (linear read, circular write)
