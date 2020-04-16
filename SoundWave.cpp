@@ -14,19 +14,25 @@ SoundWave::SoundWave()
 	  period(0.),
 	  angularVelocity(0.),
 	  noiseGeneratorPointer(nullptr),
+	  samplesPerSecond(0.),
 	  waveVolume(0.),
 	  analogSawToothN(0) {}
 
 // constructor: set properties of the sound wave, the encompassing envelope and pre-calculate values
+//	NOTE:	The pointer to the pseudo-random number generator is only needed for live noise.
+//			Noise values and the samples per second are only needed for pre-calculated noise.
 SoundWave::SoundWave(
 		const Properties& properties,
 		const SoundEnvelope& envelope,
-		Rand * noiseGeneratorPointer
+		Rand * noiseGeneratorPointer,
+		const std::vector<double> * noiseValues,
+		double samplesPerSecond
 )	: properties(properties),
 	  soundEnvelope(envelope),
 	  period(1. / properties.frequency),
 	  angularVelocity(0.),
 	  noiseGeneratorPointer(noiseGeneratorPointer),
+	  samplesPerSecond(samplesPerSecond),
 	  waveVolume(1.),
 	  analogSawToothN(15) {
 	// set type-specific default volumes and precalculate angularVelocity if necessary
@@ -40,8 +46,19 @@ SoundWave::SoundWave(
 		this->angularVelocity = properties.frequency * 2. * M_PI;
 
 	// change real distribution of noise generator if necessary
-	if(this->properties.type == SOUNDWAVE_NOISE && this->noiseGeneratorPointer)
+	if(
+			this->properties.type == SOUNDWAVE_NOISE
+			&& this->noiseGeneratorPointer
+	)
 		this->noiseGeneratorPointer->setRealLimits(-1., 1.);
+
+	// save pre-calculated noise if necessary
+	if(
+			this->properties.type == SOUNDWAVE_NOISE_PRECALCULATED
+			&& samplesPerSecond > 0.
+			&& noiseValues
+	)
+		std::vector<double>(*noiseValues).swap(this->noise);
 }
 
 // constructor for using a default envelope (sustain only)
@@ -70,14 +87,25 @@ double SoundWave::get(double time) {
 	if(time < this->properties.startTime)
 		return 0.;
 
-	if(time > this->properties.startTime + this->properties.length)
+	// check whether the sound needs to be released
+	const auto offTime = this->properties.startTime + this->properties.length - epsilon;
+
+	if(time > offTime) {
 		this->soundEnvelope.off(time);
 
+		// check whether the sound has stopped completely
+		if(time > offTime + this->soundEnvelope.getADRTimes().releaseTime)
+			return 0.;
+	}
+
+	// calculate volume using the envelope of the sound wave
 	double volume = this->soundEnvelope.get(time) * this->waveVolume;
 
+	// check whether the volume is too low to bother
 	if(volume < epsilon)
 		return 0.;
 
+	// check the type of the sound wave
 	switch(this->properties.type) {
 	case SOUNDWAVE_NONE:
 		return 0.;
@@ -100,39 +128,39 @@ double SoundWave::get(double time) {
 			return - volume;
 
 	case SOUNDWAVE_TRIANGLE:
-	{
-		// generate triangle wave
-		auto approxSin = Math::approxSinCubic(this->angularVelocity * time);
+		{
+			// generate triangle wave
+			auto approxSin = Math::approxSinCubic(this->angularVelocity * time);
 
-		/*
-		 * NOTE:	For using std::asin without breaking the sound wave,
-		 * 			the approximate sine value cannot not be outside [-1.,1].
-		 */
+			/*
+			 * NOTE:	For using std::asin without breaking the sound wave,
+			 * 			the approximate sine value cannot not be outside [-1.,1].
+			 */
 
-		if(approxSin > 1.)
-			approxSin = 1.;
-		else if(approxSin < -1.)
-			approxSin = -1.;
+			if(approxSin > 1.)
+				approxSin = 1.;
+			else if(approxSin < -1.)
+				approxSin = -1.;
 
-		return volume
-				* M_2_PI
-				* std::asin(approxSin);
-	}
+			return volume
+					* M_2_PI
+					* std::asin(approxSin);
+		}
 
 	case SOUNDWAVE_SAWTOOTH:
-	{
-		// generate "smooth" sawtooth wave
-		double result = 0.;
+		{
+			// generate "smooth" sawtooth wave
+			double result = 0.;
 
-		for(double n = 1.; n < analogSawToothN; n++)
-			/*
-			 * NOTE:	Because of the many sine calculations, we are using their
-			 * 			(probably) fastest (i.e. quadratic) approximation here.
-			 */
-			result -= (Math::approxSinQuad(n * this->angularVelocity * time)) / n;
+			for(double n = 1.; n < analogSawToothN; n++)
+				/*
+				 * NOTE:	Because of the many sine calculations, we are using their
+				 * 			(probably) fastest (i.e. quadratic) approximation here.
+				 */
+				result -= (Math::approxSinQuad(n * this->angularVelocity * time)) / n;
 
-		return volume * M_2_PI * result;
-	}
+			return volume * M_2_PI * result;
+		}
 
 	case SOUNDWAVE_SAWTOOTH_OPTIMIZED:
 		// generate sawtooth wave in an optimized way
@@ -145,8 +173,23 @@ double SoundWave::get(double time) {
 				);
 
 	case SOUNDWAVE_NOISE:
+		// generate pseudo-random output i.e. noise
 		if(this->noiseGeneratorPointer)
 			return volume * this->noiseGeneratorPointer->generateReal();
+
+		break;
+
+	case SOUNDWAVE_NOISE_PRECALCULATED:
+		// generate pre-calculated pseudo-random output i.e. pre-calculated noise
+		if(!(this->noise.empty())) {
+			return volume * this->noise.at(
+					static_cast<std::size_t>(
+							(time - this->properties.startTime) * this->samplesPerSecond
+					) % this->noise.size()
+			);
+		}
+
+		break;
 	}
 
 	return 0.;
@@ -203,8 +246,75 @@ std::string SoundWave::getTypeString() const {
 		return "Sawtooth (optimized)";
 
 	case SOUNDWAVE_NOISE:
-		return "Pseudo-random noise";
+		return "Pseudo-random noise (live)";
+
+	case SOUNDWAVE_NOISE_PRECALCULATED:
+		return "Pseudo-random noise (precalculated)";
 	}
 
 	return "<unknown>";
+}
+
+// copy constructor
+SoundWave::SoundWave(const SoundWave& other)
+: properties(other.properties),
+  soundEnvelope(other.soundEnvelope),
+  period(other.period),
+  angularVelocity(other.angularVelocity),
+  noiseGeneratorPointer(other.noiseGeneratorPointer),
+  noise(other.noise),
+  samplesPerSecond(other.samplesPerSecond),
+  waveVolume(other.waveVolume),
+  analogSawToothN(other.analogSawToothN) {
+}
+
+// copy assignment
+SoundWave& SoundWave::operator=(const SoundWave& other) {
+	properties = other.properties;
+	soundEnvelope = other.soundEnvelope;
+	period = other.period;
+	angularVelocity = other.angularVelocity;
+	noiseGeneratorPointer = other.noiseGeneratorPointer;
+	noise = other.noise;
+	samplesPerSecond = other.samplesPerSecond;
+	waveVolume = other.waveVolume;
+	analogSawToothN = other.analogSawToothN;
+
+	return *this;
+}
+
+// move constructor
+SoundWave::SoundWave(SoundWave&& other) {
+	using std::swap;
+	
+	swap(properties, other.properties);
+	swap(soundEnvelope, other.soundEnvelope);
+	swap(period, other.period);
+	swap(angularVelocity, other.angularVelocity);
+	swap(noiseGeneratorPointer, other.noiseGeneratorPointer);
+	
+	noise.swap(other.noise);
+	
+	swap(samplesPerSecond, other.samplesPerSecond);
+	swap(waveVolume, other.waveVolume);
+	swap(analogSawToothN, other.analogSawToothN);
+}
+
+// move assignment
+SoundWave& SoundWave::operator=(SoundWave&& other) {
+	using std::swap;
+
+	swap(properties, other.properties);
+	swap(soundEnvelope, other.soundEnvelope);
+	swap(period, other.period);
+	swap(angularVelocity, other.angularVelocity);
+	swap(noiseGeneratorPointer, other.noiseGeneratorPointer);
+	
+	noise.swap(other.noise);
+	
+	swap(samplesPerSecond, other.samplesPerSecond);
+	swap(waveVolume, other.waveVolume);
+	swap(analogSawToothN, other.analogSawToothN);
+
+	return *this;
 }
