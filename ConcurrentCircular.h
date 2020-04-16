@@ -120,8 +120,8 @@ public:
 		return true;
 	}
 
-	// read all available elements, return an empty container if none were available
-	void readAll(Container<T>& out, SizeType max = 0) {
+	// read all or up to max available elements, give back an empty container if no elements were available
+	void readAll(Container<T>& out, SizeType max = 0 /* zero means infinite */) {
 		SizeType currentReadHead = 0;
 		SizeType currentWriteHead = 0;
 		State currentState = this->getState(currentReadHead, currentWriteHead);
