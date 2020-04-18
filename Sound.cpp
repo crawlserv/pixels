@@ -23,7 +23,7 @@ Sound::Sound()
 		  outputSampleRate(44100),
 		  outputChannels(0),
 		  outputMaxFrames(0),
-		  outputLatency(0.01),
+		  outputLatency(0.025),
 		  isUnderflow(false),
 		  lastWritingError(0) {
 	// create soundio context
@@ -208,7 +208,7 @@ void Sound::setOutputMaxFrames(unsigned int maxFrames) {
 	this->outputMaxFrames = maxFrames;
 }
 
-// set the desired software latency for the sound output (in seconds, default: 0.01 i.e. 10ms, zero means device default)
+// set the desired software latency for the sound output (in seconds, default: 0.025 i.e. 25ms, zero means device default)
 //	WARNING: The device default might be a very high latency (e.g. 2s), therefore it is better to use the in-class default !
 //			 Very low numbers will lead to 'underflow' i.e. not enough data to write to the output sound device !
 void Sound::setOutputLatency(double latency) {
@@ -455,16 +455,27 @@ std::string Sound::getOutputChannelName(unsigned int channel) const {
 bool Sound::isOutputUnderflowOccured() {
 	bool changeIfValueIs = true;
 
-	return this->isUnderflow.compare_exchange_strong(changeIfValueIs, false);
+	return this->isUnderflow.compare_exchange_strong(
+			changeIfValueIs,
+			false,
+			std::memory_order_relaxed,
+			std::memory_order_release
+	);
 }
 
 // check whether errors occured while writing to the output buffer and request them from the sound system
-// NOTE:	Resets the error state, only the last error will be catched.
 bool Sound::isOutputWritingErrorsOccured(std::string& lastErrorOut) {
-	const auto lastError = this->lastWritingError.load(std::memory_order_acquire);
+	int lastError = this->lastWritingError.load(std::memory_order_acquire);
 
 	if(lastError) {
 		lastErrorOut = soundio_strerror(lastError);
+
+		this->lastWritingError.compare_exchange_strong(
+				lastError,
+				0,
+				std::memory_order_acquire,
+				std::memory_order_release
+		);
 
 		return true;
 	}
