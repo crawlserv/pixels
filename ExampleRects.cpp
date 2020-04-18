@@ -28,6 +28,7 @@ int ExampleRects::run(int argc, char * argv[]) {
 
 	this->setClearBuffer(true);
 	this->setPixelSize(this->pixelSize);
+
 	this->createMainWindow(width, height, name);
 
 	this->Engine::run();
