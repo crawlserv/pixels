@@ -17,22 +17,24 @@
 #include "SoundEnvelope.h"
 #include "SoundWave.h"
 
-#include <algorithm>	// std::remove_if, std::swap
-#include <atomic>		// std::atomic
-#include <chrono>		// std::chrono
-#include <cmath>		// std::fmod, std::lround, std::pow
+#include <algorithm>	// std::swap
+#include <atomic>		// std::atomic, std::memory_order
+#include <cmath>		// std::lround, std::pow
 #include <cstddef>		// std::size_t
 #include <cstdlib>		// EXIT_SUCCESS
 #include <functional>	// std::bind, std::placeholders
 #include <iostream>		// std::cout, std::endl
-#include <mutex>		// std::lock_guard, std::mutex
+#include <mutex>		// std::lock_guard, std::mutex, std::try_to_lock, std::unique_lock
+#include <stdexcept>	// std::runtime_error
 #include <string>		// std::string, std::to_string
-#include <thread>		// std::this_thread
+#include <thread>		// std::this_thread, std::thread
 #include <vector>		// std::vector
 
 #define UNUSED(x) (void)(x)
 
 class ExampleSound : Engine {
+	static constexpr auto maxSoundWaves = 20;
+
 	enum Action {
 		ACTION_NONE,
 		ACTION_ADD_SINE,
@@ -41,7 +43,6 @@ class ExampleSound : Engine {
 		ACTION_ADD_SAWTOOTH,
 		ACTION_ADD_NOISE,
 		ACTION_CLEAR,
-		ACTION_UPDATE,
 		ACTION_QUIT
 	};
 
@@ -70,12 +71,11 @@ private:
 
 	void threadIntermediary();
 
-	void updateSoundWaves(double time);
 	void addSoundWave(SoundWave::Type type);
 	void clearSoundWaves();
 
 	double generateSound(unsigned int channel, double time, bool forThread = false);
-	double generateSoundFrom(double time, std::vector<SoundWave>& from);
+	double generateSoundFrom(double time, SoundWave * from, std::size_t n);
 
 	unsigned short pixelSize;
 	unsigned short waveResolution;
@@ -99,19 +99,16 @@ private:
 	std::thread intermediary;
 	std::mutex lock;
 
-	std::atomic<std::size_t> numberOfSoundWaves;
-
-	std::vector<SoundWave> soundWavesForIntermediary;
-	std::vector<SoundWave> soundWavesForAudioThread;
+	SoundWave soundWavesForIntermediary[maxSoundWaves];
+	SoundWave soundWavesForAudioThread[maxSoundWaves];
 
 	ConcurrentCircular<Command> commandsToIntermediary;
 	ConcurrentCircular<SoundWave> soundWavesToAudioThread;
 
-	std::atomic<bool> isUpdateSoundWaves;
-	std::atomic<bool> isClearSoundWaves;
+	unsigned char indexNextSoundWaveIntermediary;
+	unsigned char indexNextSoundWaveAudioThread;
 
-	double lastClearTime;
-	double lastRenderValue;
+	std::atomic<bool> isClearSoundWaves;
 };
 
 #endif /* EXAMPLERECTS_H_ */

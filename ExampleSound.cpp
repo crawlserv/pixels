@@ -15,20 +15,15 @@ ExampleSound::ExampleSound()
 		  maxVolume(0.8),
 		  randomGenerator(Rand::RAND_ALGO_LEHMER32),
 		  noiseGenerator(Rand::RAND_ALGO_LEHMER32),
-		  commandsToIntermediary(50),
-		  soundWavesToAudioThread(50),
-		  isUpdateSoundWaves(false),
-		  isClearSoundWaves(false),
-		  lastClearTime(0.),
-		  lastRenderValue(0.) {
+		  commandsToIntermediary(maxSoundWaves),
+		  soundWavesToAudioThread(maxSoundWaves),
+		  indexNextSoundWaveIntermediary(0),
+		  indexNextSoundWaveAudioThread(0),
+		  isClearSoundWaves(false) {
 	// setup random generators
 	this->randomGenerator.setRealLimits(0.1, 1.5);		// wave lengths between 0.1 and 1.5 seconds
 	this->randomGenerator.setByteLimits(0, 47);			// 48 tones over three octaves
 	this->noiseGenerator.setRealLimits(-1., 1.);
-
-	// reserve memory for up to a hundred (simultaneous) sound waves
-	this->soundWavesForIntermediary.reserve(100);
-	this->soundWavesForAudioThread.reserve(100);
 }
 
 // destructor
@@ -96,7 +91,7 @@ void ExampleSound::onCreate() {
 
 	// wait for the sound system to be ready
 	while(!(this->soundSystem.isStarted()))
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		std::this_thread::yield();
 
 	// query for information about the sound output and print it to stdout
 	std::cout << "device=" << this->soundSystem.getOutputDeviceName() << std::endl;
@@ -128,17 +123,6 @@ void ExampleSound::onUpdate(double elapsedTime) {
 
 	const double currentTime = this->getTime();
 
-	// clear sound waves that have ended every second
-	if(currentTime - this->lastClearTime > 1.) {
-		// send command to intermediary thread
-		Command update(currentTime, ACTION_UPDATE);
-
-		this->commandsToIntermediary.push(update);
-
-		// save current time
-		this->lastClearTime = currentTime;
-	}
-
 	// render sound wave
 	const auto w = this->getWindowWidth();
 	const auto h = this->getWindowHeight();
@@ -153,7 +137,10 @@ void ExampleSound::onUpdate(double elapsedTime) {
 		bool swapped = false;
 
 		if(yFrom > yTo) {
-			std::swap(yFrom, yTo);
+			using std::swap;
+
+			swap(yFrom, yTo);
+
 			swapped = true;
 		}
 
@@ -185,9 +172,7 @@ void ExampleSound::onUpdate(double elapsedTime) {
 
 	// show number of sound waves and current wave resolution
 	this->setDebugText(
-			"n="
-			+ std::to_string(this->numberOfSoundWaves.load(std::memory_order_relaxed))
-			+ ", res="
+			"res="
 			+ std::to_string(this->waveResolution)
 			+ "ms"
 			+ errorString
@@ -279,9 +264,7 @@ void ExampleSound::onDestroy() {
 	if(this->intermediary.joinable())
 		this->intermediary.join();
 
-	// clear buffers and sound waves
-	this->soundWavesForIntermediary.clear();
-	this->soundWavesForAudioThread.clear();
+	// clear buffers
 	this->commandsToIntermediary.clear();
 	this->soundWavesToAudioThread.clear();
 }
@@ -340,11 +323,6 @@ void ExampleSound::threadIntermediary() {
 
 				break;
 
-			case ACTION_UPDATE:
-				this->updateSoundWaves(command.time);
-
-				break;
-
 			case ACTION_QUIT:
 				running = false;
 
@@ -360,32 +338,6 @@ void ExampleSound::threadIntermediary() {
 	} while(running);
 }
 
-// update sound waves by removing those who are not needed anymore
-void ExampleSound::updateSoundWaves(double time) {
-	// notify the sound thread to remove old sound waves
-	this->isUpdateSoundWaves.store(true, std::memory_order_release);
-
-	{
-		// lock sound waves for intermediary thread
-		std::lock_guard<std::mutex> accessToIntermediary(this->lock);
-
-		// clear data for the intermediary thread
-		this->soundWavesForIntermediary.erase(
-				std::remove_if(
-						this->soundWavesForIntermediary.begin(),
-						this->soundWavesForIntermediary.end(),
-						[&time](const auto& wave) -> bool {
-							return wave.done(time);
-						}
-				),
-				this->soundWavesForIntermediary.end()
-		);
-
-		// save the new number of sound waves
-		this->numberOfSoundWaves.store(this->soundWavesForIntermediary.size(), std::memory_order_relaxed);
-	}
-}
-
 // add a sound wave
 void ExampleSound::addSoundWave(SoundWave::Type type) {
 	// generate semi-random frequency and random length
@@ -399,7 +351,7 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 	const double start = this->getTime();
 
 	// set noise resolution (i.e. the percentage of actually pre-calculated samples)
-	constexpr double noiseResolution = 0.5;
+	constexpr double noiseResolution = 1.;
 
 	// set your envelope here
 	//const SoundEnvelope envelope(SoundEnvelope::ADSRTimes(0., length, 0.), 1., 0.);
@@ -446,7 +398,7 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 		std::lock_guard<std::mutex> accessToIntermediary(this->lock);
 
 		// add sound wave to the intermediary thread and render it immediately
-		this->soundWavesForIntermediary.emplace_back(
+		SoundWave newSoundWave(
 				SoundWave::Properties(type, frequency, length, start),
 				envelope,
 				nullptr,
@@ -454,16 +406,24 @@ void ExampleSound::addSoundWave(SoundWave::Type type) {
 				samplesPerSecond
 		);
 
-		this->soundWavesForIntermediary.back().start(start);
+		newSoundWave.start(start);
 
-		this->numberOfSoundWaves.store(this->soundWavesForIntermediary.size(), std::memory_order_relaxed);
+		using std::swap;
+
+		swap(newSoundWave, this->soundWavesForIntermediary[this->indexNextSoundWaveIntermediary]);
+
+		++(this->indexNextSoundWaveIntermediary);
+
+		if(this->indexNextSoundWaveIntermediary == ExampleSound::maxSoundWaves)
+			this->indexNextSoundWaveIntermediary = 0;
 	}
 }
 
 // clear all sound waves
 void ExampleSound::clearSoundWaves() {
-	// clear data for the main thread
-	std::vector<SoundWave>().swap(this->soundWavesForIntermediary);
+	// clear data for the intermediary thread
+	for(unsigned char i = 0; i < ExampleSound::maxSoundWaves; ++i)
+		this->soundWavesForIntermediary[i].clear();
 
 	// notify the sound thread to clear its data
 	this->isClearSoundWaves.store(true);
@@ -474,43 +434,33 @@ double ExampleSound::generateSound(unsigned int channel, double time, bool forAu
 	UNUSED(channel);
 
 	if(forAudioThread) { /* inside the audio thread */
-		// add new sound waves
-		std::vector<SoundWave> newSoundWaves;
+		// add new sound wave
+		if(this->soundWavesToAudioThread.pop(this->soundWavesForAudioThread[this->indexNextSoundWaveAudioThread])) {
+			++(this->indexNextSoundWaveAudioThread);
 
-		this->soundWavesToAudioThread.pop(newSoundWaves);
-
-		this->soundWavesForAudioThread.insert(
-				this->soundWavesForAudioThread.end(),
-				newSoundWaves.begin(),
-				newSoundWaves.end()
-		);
-
-		if(this->isUpdateSoundWaves.load(std::memory_order_acquire)) {
-			// clear old sound waves that are not needed anymore
-			const auto timePosition = this->soundSystem.getTimePosition();
-
-			this->soundWavesForAudioThread.erase(
-					std::remove_if(
-							this->soundWavesForAudioThread.begin(),
-							this->soundWavesForAudioThread.end(),
-							[&timePosition](const auto& wave) -> bool {
-								return wave.done(timePosition);
-							}
-					),
-					this->soundWavesForAudioThread.end()
-			);
-
-			this->isUpdateSoundWaves.store(false, std::memory_order_release);
+			if(this->indexNextSoundWaveAudioThread == ExampleSound::maxSoundWaves)
+				this->indexNextSoundWaveAudioThread = 0;
 		}
 
-		if(this->isClearSoundWaves.load()) {
+		bool changeIfValueIs = true;
+
+		if(
+				this->isClearSoundWaves.compare_exchange_weak(
+						changeIfValueIs,
+						false,
+						std::memory_order_relaxed,
+						std::memory_order_release
+				)
+		)
 			// clear all sound waves
-			this->soundWavesForAudioThread.clear();
+			for(unsigned char i = 0; i < ExampleSound::maxSoundWaves; ++i)
+				this->soundWavesForAudioThread[i].clear();
 
-			this->isClearSoundWaves.store(false);
-		}
-
-		return this->generateSoundFrom(time, this->soundWavesForAudioThread);
+		return this->generateSoundFrom(
+				time,
+				this->soundWavesForAudioThread,
+				ExampleSound::maxSoundWaves
+		);
 	}
 
 	// in main thread: only render the new value if access to the data of the intermediary thread is given
@@ -518,22 +468,26 @@ double ExampleSound::generateSound(unsigned int channel, double time, bool forAu
 		std::unique_lock<std::mutex> accessToIntermediary(this->lock, std::try_to_lock);
 
 		if(accessToIntermediary.owns_lock())
-			this->lastRenderValue = this->generateSoundFrom(time, this->soundWavesForIntermediary);
+			return this->generateSoundFrom(
+					time,
+					this->soundWavesForIntermediary,
+					ExampleSound::maxSoundWaves
+			);
 	}
 
-	return this->lastRenderValue;
+	return 0.;
 }
 
 // generate sound at the specified time from the specified source
-double ExampleSound::generateSoundFrom(double time, std::vector<SoundWave>& from) {
-	if(from.empty())
+double ExampleSound::generateSoundFrom(double time, SoundWave * from, std::size_t n) {
+	if(!n)
 		return 0.;
 
 	// mixing
 	double result = 0.;
 
-	for(auto& wave : from)
-		result += this->masterVolume * wave.get(time);
+	for(std::size_t i = 0; i < n; ++i)
+		result += this->masterVolume * from[i].get(time);
 
 	// clipping
 	if(result > this->maxVolume)
