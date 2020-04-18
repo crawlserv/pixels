@@ -453,19 +453,15 @@ std::string Sound::getOutputChannelName(unsigned int channel) const {
 // check whether a underflow error has occured while writing the output
 //	NOTE:	Resets the state of the underflow error when called.
 bool Sound::isOutputUnderflowOccured() {
-	if(this->isUnderflow.load()) {
-		this->isUnderflow.store(false);
+	bool changeIfValueIs = true;
 
-		return true;
-	}
-
-	return false;
+	return this->isUnderflow.compare_exchange_strong(changeIfValueIs, false);
 }
 
 // check whether errors occured while writing to the output buffer and request them from the sound system
 // NOTE:	Resets the error state, only the last error will be catched.
 bool Sound::isOutputWritingErrorsOccured(std::string& lastErrorOut) {
-	const auto lastError = this->lastWritingError.load();
+	const auto lastError = this->lastWritingError.load(std::memory_order_acquire);
 
 	if(lastError) {
 		lastErrorOut = soundio_strerror(lastError);
@@ -666,7 +662,7 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 
 		if(beginError) {
 			// save output error and cancel
-			this->lastWritingError.store(beginError);
+			this->lastWritingError.store(beginError, std::memory_order_release);
 
 			return;
 		}
@@ -692,7 +688,7 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 
 		if(endError) {
 			// save output error and cancel
-			this->lastWritingError.store(endError);
+			this->lastWritingError.store(endError, std::memory_order_release);
 
 			return;
 		}
@@ -703,7 +699,7 @@ void Sound::onWrite(int frameCountMin, int frameCountMax) {
 
 // buffer has underflow
 void Sound::onUnderflow() {
-	this->isUnderflow.store(true);
+	this->isUnderflow.store(true, std::memory_order_release);
 }
 
 // delegate on devices changed event into the class
