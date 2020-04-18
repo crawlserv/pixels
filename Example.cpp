@@ -21,6 +21,7 @@ int Example::run(int argc, char * argv[]) {
 	constexpr int width = 800;
 	constexpr int height = 600;
 
+	//this->setClearBuffer(true);
 	this->setPixelSize(this->pixelSize);
 
 	this->createMainWindow(width, height, name);
