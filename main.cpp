@@ -5,11 +5,19 @@
  *      Author: ans
  */
 
-//#include "ExampleNoise.h"
-//#include "ExampleRects.h"
+#include "Example.h"
+#include "ExampleNoise.h"
+#include "ExampleRects.h"
 #include "ExampleSound.h"
 
 int main(int argc, char * argv[]) {
+	/*
+	 * EXAMPLE 0: Load the framework but draw nothing.
+	 *
+	 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
+	 */
+	return Example().run(argc, argv);
+
 	/*
 	 * EXAMPLE 1: Draw all the pixels with random colors changing each frame.
 	 *
@@ -41,5 +49,5 @@ int main(int argc, char * argv[]) {
 	 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
 	 * Press the RIGHT and LEFT arrow keys to adjust the resolution of the rendered sound wave.
 	 */
-	return ExampleSound().run(argc, argv);
+	//return ExampleSound().run(argc, argv);
 }
