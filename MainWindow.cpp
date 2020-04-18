@@ -15,7 +15,7 @@ MainWindow::MainWindow()
 		  pixelBufferSize(0),
 		  width(0),
 		  height(0),
-		  bytes(3),
+		  bytes(4),
 		  pixelWidth(0),
 		  pixelHeight(0),
 		  clearBuffer(false),
@@ -84,7 +84,8 @@ void MainWindow::init(unsigned int w, unsigned int h, const std::string& title) 
 	glfwSwapInterval(0);
 
 	// set additional OpenGL options
-	glDisable(GL_LIGHTING);
+	glDisable(GL_DITHER);
+	glDisable(GL_MULTISAMPLE);
 	glShadeModel(GL_FLAT);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glClearColor(0., 0., 0., 1.);
@@ -229,7 +230,7 @@ void MainWindow::setPixelTest(const PixelTest& test) {
 }
 
 // write one pixel into the buffer
-void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b) {
+void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
 	const auto offsetX = x * this->pixelSize;
 	const auto offsetY = y * this->pixelSize;
 	int limitX = this->pixelSize;
@@ -253,7 +254,8 @@ void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsig
 							putY,
 							r,
 							g,
-							b
+							b,
+							a
 					);
 				else if(this->pixelTest.debugging)
 					this->pixels.set(
@@ -261,7 +263,8 @@ void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsig
 							putY,
 							255,
 							0,
-							0
+							0,
+							255
 					);
 			}
 	else
@@ -272,7 +275,8 @@ void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsig
 						offsetY + relY,
 						r,
 						g,
-						b
+						b,
+						a
 				);
 }
 
@@ -316,9 +320,6 @@ void MainWindow::setProjection() {
 	// set model
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-
-	// set point size
-	glPointSize(this->pixelSize);
 }
 
 // reset keys (only pressed and released)
@@ -369,9 +370,6 @@ void MainWindow::beginPixelBuffer() {
 	// bind buffer
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pixelBuffer);
 
-	// discard content (do not wait for old operations to be finished)
-	glBufferData(GL_PIXEL_UNPACK_BUFFER, this->pixelBufferSize, nullptr, GL_STREAM_DRAW);
-
 	// map pixels
 	this->pixels.map(
 			this->width,
@@ -385,7 +383,7 @@ void MainWindow::beginPixelBuffer() {
 
 	// clear pixel buffer if necessary
 	if(this->clearBuffer)
-		this->pixels.fill(0, 0, 0);
+		this->pixels.fill(0, 0, 0, 255);
 }
 
 // unbind pixel buffer and copy it to GPU
@@ -394,7 +392,7 @@ void MainWindow::endPixelBuffer() {
 
 	this->pixels.unmap();
 
-	glDrawPixels(this->width, this->height, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	glDrawPixels(this->width, this->height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }
