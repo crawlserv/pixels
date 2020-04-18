@@ -82,9 +82,6 @@ void SoundWave::stop(double time) {
 
 // get the sound wave value at the specified time
 double SoundWave::get(double time) {
-	if(this->properties.type == SOUNDWAVE_NONE)
-		return 0.;
-
 	if(time < this->properties.startTime)
 		return 0.;
 
@@ -112,6 +109,9 @@ double SoundWave::get(double time) {
 
 	// check the type of the sound wave
 	switch(this->properties.type) {
+	case SOUNDWAVE_NONE:
+		return 0.;
+
 	case SOUNDWAVE_SINE:
 		// generate sine wave
 
@@ -192,9 +192,6 @@ double SoundWave::get(double time) {
 		}
 
 		break;
-
-	default:
-		break;
 	}
 
 	return 0.;
@@ -203,6 +200,11 @@ double SoundWave::get(double time) {
 // get whether the sound wave has ended at the specified time
 bool SoundWave::done(double time) const {
 	return this->soundEnvelope.done(time);
+}
+
+// get whether the sound wave exists
+bool SoundWave::exists() const {
+	return this->properties.type != SOUNDWAVE_NONE;
 }
 
 // set the ADSR (attack, decay, sustain, release) envelope of the sound wave

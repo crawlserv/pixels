@@ -60,6 +60,7 @@ public:
 
 	double get(double time);
 	bool done(double time) const;
+	bool exists() const;
 
 	void setEnvelope(const SoundEnvelope& envelope);
 	void setWaveVolume(double volume);
