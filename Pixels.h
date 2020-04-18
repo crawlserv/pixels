@@ -16,8 +16,8 @@ public:
 	virtual ~Pixels();
 
 	void map(int w, int h, unsigned char b, unsigned char * ptr);
-	void fill(unsigned char r, unsigned char g, unsigned char b);
-	void set(int x, int y, unsigned char r, unsigned char g, unsigned char b);
+	void fill(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+	void set(int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 	void unmap();
 
 	const void * c_ptr();

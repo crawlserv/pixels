@@ -22,7 +22,7 @@ void Pixels::map(int w, int h, unsigned char b, unsigned char * ptr) {
 }
 
 // fill all the mapped pixel with one color (r, g, b)
-void Pixels::fill(unsigned char r, unsigned char g, unsigned char b) {
+void Pixels::fill(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
 	for(auto x = 0; x < this->width; ++x)
 		for(auto y = 0; y < this->height; ++y) {
 			const auto offset = y * this->width * this->bytes + x * this->bytes;
@@ -30,19 +30,18 @@ void Pixels::fill(unsigned char r, unsigned char g, unsigned char b) {
 			this->pixels[offset] = r;
 			this->pixels[offset + 1] = g;
 			this->pixels[offset + 2] = b;
+			this->pixels[offset + 3] = a;
 		}
 }
 
-// set one of the mapped pixel (x, y) to the specified color (r, g, b)
-void Pixels::set(int x, int y, unsigned char r, unsigned char g, unsigned char b) {
-	if(x > this->width - 1)
-		throw std::runtime_error(std::to_string(x) + " > " + std::to_string(this->width - 1));
-
+// set one of the mapped pixel (x, y) to the specified color (r, g, b, a)
+void Pixels::set(int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
 	const auto offset = y * this->width * this->bytes + x * this->bytes;
 
 	this->pixels[offset] = r;
 	this->pixels[offset + 1] = g;
 	this->pixels[offset + 2] = b;
+	this->pixels[offset + 3] = a;
 }
 
 // unset the pointer to the mapped pixels
