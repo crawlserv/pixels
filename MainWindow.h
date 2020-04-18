@@ -34,7 +34,7 @@ public:
 	virtual ~MainWindow();
 
 	void init(unsigned int w, unsigned int h, const std::string& title);
-	bool update(UpdateFunction onUpdate);
+	bool update();
 
 	int getWidth() const;
 	int getHeight() const;
@@ -52,6 +52,7 @@ public:
 	void setPixelTest(const PixelTest& test);
 	void putPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b);
 
+	void setOnUpdate(UpdateFunction callBack);
 	void setOnResize(ResizeFunction callBack);
 	void setDebugText(const std::string& text);
 
@@ -102,7 +103,9 @@ private:
 		bool repeated;
 	} keys[GLFW_KEY_LAST];
 
+	UpdateFunction onUpdate;
 	ResizeFunction onResize;
+
 	PixelTest pixelTest;
 };
 

@@ -46,11 +46,15 @@ void Engine::createMainWindow(int width, int height, const std::string& title) {
 
 // run the engine
 void Engine::run() {
+	// initialize application-specific data
 	this->onCreate();
+
+	// set callback for rendering
+	this->window.setOnUpdate(std::bind(&Engine::onUpdate, this, std::placeholders::_1));
 
 	while(true) {
 		// update window
-		if(this->window.update(std::bind(&Engine::onUpdate, this, std::placeholders::_1))) {
+		if(this->window.update()) {
 			const double newTime = this->window.getTime();
 
 			if(this->debugChanged || newTime - this->oldTime > 0.25) {

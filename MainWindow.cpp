@@ -100,7 +100,7 @@ void MainWindow::init(unsigned int w, unsigned int h, const std::string& title) 
 }
 
 // tick in window loop to process window events, return whether window has been closed
-bool MainWindow::update(UpdateFunction onUpdate) {
+bool MainWindow::update() {
 	// check whether window has been closed
 	if(glfwWindowShouldClose(this->window))
 		return false;
@@ -127,7 +127,7 @@ bool MainWindow::update(UpdateFunction onUpdate) {
 	this->beginPixelBuffer();
 
 	// update frame
-	onUpdate(this->getElapsedTime());
+	this->onUpdate(this->getElapsedTime());
 
 	// end rendering to pixel buffer
 	this->endPixelBuffer();
@@ -274,6 +274,11 @@ void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsig
 						g,
 						b
 				);
+}
+
+// set callback function for updating the content
+void MainWindow::setOnUpdate(UpdateFunction callBack) {
+	this->onUpdate = callBack;
 }
 
 // set callback function for resize
