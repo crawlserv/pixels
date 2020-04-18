@@ -33,7 +33,7 @@
 #define UNUSED(x) (void)(x)
 
 class ExampleSound : Engine {
-	static constexpr auto maxSoundWaves = 20;
+	static constexpr unsigned char maxSoundWaves = 20;
 
 	enum Action {
 		ACTION_NONE,
@@ -75,7 +75,7 @@ private:
 	void clearSoundWaves();
 
 	double generateSound(unsigned int channel, double time, bool forThread = false);
-	double generateSoundFrom(double time, SoundWave * from, std::size_t n);
+	double generateSoundFrom(double time, SoundWave * from, std::size_t n, bool count = false);
 
 	unsigned short pixelSize;
 	unsigned short waveResolution;
@@ -109,6 +109,8 @@ private:
 	unsigned char indexNextSoundWaveAudioThread;
 
 	std::atomic<bool> isClearSoundWaves;
+
+	unsigned char numSoundWaves;
 };
 
 #endif /* EXAMPLERECTS_H_ */
