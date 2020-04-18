@@ -25,6 +25,7 @@
 #include <cstdlib>		// EXIT_SUCCESS
 #include <functional>	// std::bind, std::placeholders
 #include <iostream>		// std::cout, std::endl
+#include <mutex>		// std::lock_guard, std::mutex
 #include <string>		// std::string, std::to_string
 #include <thread>		// std::this_thread
 #include <vector>		// std::vector
@@ -32,6 +33,27 @@
 #define UNUSED(x) (void)(x)
 
 class ExampleSound : Engine {
+	enum Action {
+		ACTION_NONE,
+		ACTION_ADD_SINE,
+		ACTION_ADD_SQUARE,
+		ACTION_ADD_TRIANGLE,
+		ACTION_ADD_SAWTOOTH,
+		ACTION_ADD_NOISE,
+		ACTION_CLEAR,
+		ACTION_UPDATE,
+		ACTION_QUIT
+	};
+
+	struct Command {
+		double time;
+		Action action;
+
+		Command(double time, Action action) : time(time), action(action) {}
+		Command(Action action) : Command(0., action) {}
+		Command() : Command(ACTION_NONE) {}
+	};
+
 public:
 	ExampleSound();
 	virtual ~ExampleSound();
@@ -46,6 +68,9 @@ private:
 	void onUpdate(double elapsedTime) override;
 	void onDestroy() override;
 
+	void threadIntermediary();
+
+	void updateSoundWaves(double time);
 	void addSoundWave(SoundWave::Type type);
 	void clearSoundWaves();
 
@@ -62,21 +87,31 @@ private:
 	Sound soundSystem;
 
 	/*
-	 * NOTE:	The main thread and the sound thread use parallel data structures.
+	 * NOTE:	The main thread, the intermediary thread and the sound thread use parallel data structures.
 	 *
-	 * 			New sound waves will be sent to the sound thread via a thread-
-	 * 			safe, yet non-blocking, circular (FIFO) buffer to avoid locking,
+	 * 			New commands will be sent by the main thread to the intermediary thread
+	 * 			and new sound waves by the intermediary thread to the sound thread via two
+	 * 			thread-safe, yet non-blocking, circular (FIFO) buffers to avoid locking,
 	 * 			which is discouraged in real time sound programming.
+	 *
 	 */
 
-	std::vector<SoundWave> soundWavesForMain;
-	std::vector<SoundWave> soundWavesForThread;
+	std::thread intermediary;
+	std::mutex lock;
 
-	ConcurrentCircular<SoundWave> soundWavesToThread;
-	std::atomic<bool> isRemoveOldSoundWaves;
+	std::atomic<std::size_t> numberOfSoundWaves;
+
+	std::vector<SoundWave> soundWavesForIntermediary;
+	std::vector<SoundWave> soundWavesForAudioThread;
+
+	ConcurrentCircular<Command> commandsToIntermediary;
+	ConcurrentCircular<SoundWave> soundWavesToAudioThread;
+
+	std::atomic<bool> isUpdateSoundWaves;
 	std::atomic<bool> isClearSoundWaves;
 
 	double lastClearTime;
+	double lastRenderValue;
 };
 
 #endif /* EXAMPLERECTS_H_ */
