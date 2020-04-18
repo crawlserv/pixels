@@ -12,7 +12,7 @@
 
 #include <soundio/soundio.h>
 
-#include <atomic>		// std::atomic
+#include <atomic>		// std::atomic, std::memory_order
 #include <functional>	// std::function
 #include <limits>		// std::numeric_limits
 #include <stdexcept>	// std::runtime_error
