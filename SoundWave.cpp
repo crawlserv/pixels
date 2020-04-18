@@ -82,20 +82,25 @@ void SoundWave::stop(double time) {
 
 // get the sound wave value at the specified time
 double SoundWave::get(double time) {
-	constexpr double epsilon = 0.0001;
+	if(this->properties.type == SOUNDWAVE_NONE)
+		return 0.;
 
 	if(time < this->properties.startTime)
 		return 0.;
 
 	// check whether the sound needs to be released
+	constexpr double epsilon = 0.0001;
 	const auto offTime = this->properties.startTime + this->properties.length - epsilon;
 
 	if(time > offTime) {
 		this->soundEnvelope.off(time);
 
 		// check whether the sound has stopped completely
-		if(time > offTime + this->soundEnvelope.getADRTimes().releaseTime)
+		if(time > offTime + this->soundEnvelope.getADRTimes().releaseTime) {
+			this->clear();
+
 			return 0.;
+		}
 	}
 
 	// calculate volume using the envelope of the sound wave
@@ -107,9 +112,6 @@ double SoundWave::get(double time) {
 
 	// check the type of the sound wave
 	switch(this->properties.type) {
-	case SOUNDWAVE_NONE:
-		return 0.;
-
 	case SOUNDWAVE_SINE:
 		// generate sine wave
 
@@ -190,6 +192,9 @@ double SoundWave::get(double time) {
 		}
 
 		break;
+
+	default:
+		break;
 	}
 
 	return 0.;
@@ -216,6 +221,11 @@ void SoundWave::setWaveVolume(double volume) {
 		this->waveVolume = 0.;
 	else
 		this->waveVolume = volume;
+}
+
+// set sound wave to none
+void SoundWave::clear() {
+	this->properties.type = SOUNDWAVE_NONE;
 }
 
 // set the N for analog sawtooth waves, i.e. how many sine waves will be added up for the wave

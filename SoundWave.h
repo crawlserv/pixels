@@ -65,6 +65,8 @@ public:
 	void setWaveVolume(double volume);
 	void setAnalogSawToothN(unsigned int n);
 
+	void clear();
+
 	std::string getTypeString() const;
 
 	SoundWave(const SoundWave& other);
