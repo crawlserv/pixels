@@ -52,14 +52,14 @@ public:
 
 	// return whether the buffer is empty
 	bool empty() const {
-		return this->isEmpty.load(std::memory_order_acquire)
-				&& this->readHead.load(std::memory_order_acquire) == this->writeHead.load(std::memory_order_acquire);
+		return this->isEmpty.load()
+				&& this->readHead.load() == this->writeHead.load();
 	}
 
 	// return whether the buffer is full
 	bool full() const {
-		return this->readHead.load(std::memory_order_acquire) == this->writeHead.load(std::memory_order_acquire)
-				&& !(this->isEmpty.load(std::memory_order_acquire));
+		return this->readHead.load() == this->writeHead.load()
+				&& !(this->isEmpty.load());
 	}
 
 	// return the size of the circular buffer
@@ -115,10 +115,10 @@ public:
 
 		// check whether the buffer will be empty
 		if(currentReadHead == currentWriteHead)
-			this->isEmpty.store(true, std::memory_order_release);
+			this->isEmpty.store(true);
 
 		// update read head
-		this->readHead.store(currentReadHead, std::memory_order_release);
+		this->readHead.store(currentReadHead);
 
 		return true;
 	}
@@ -206,10 +206,10 @@ public:
 
 		// set the buffer to empty if applicable
 		if(readAll)
-			this->isEmpty.store(true, std::memory_order_release);
+			this->isEmpty.store(true);
 
 		// update read head
-		this->readHead.store(currentReadHead, std::memory_order_release);
+		this->readHead.store(currentReadHead);
 
 		// swap out the result
 		using std::swap;
@@ -244,11 +244,11 @@ public:
 			currentWriteHead = 0;
 
 		// update write head
-		this->writeHead.store(currentWriteHead, std::memory_order_release);
+		this->writeHead.store(currentWriteHead);
 
 		// check whether buffer was empty
 		if(currentState == STATE_EMPTY)
-			this->isEmpty.store(false, std::memory_order_release);
+			this->isEmpty.store(false);
 
 		return true;
 	}
@@ -330,12 +330,12 @@ public:
 			currentWriteHead -= this->bufferSize;
 
 		// update the write head
-		this->writeHead.store(currentWriteHead, std::memory_order_release);
+		this->writeHead.store(currentWriteHead);
 
 		// check whether the buffer was empty
 		if(currentState == STATE_EMPTY && (writeLinear || writeCircular))
 			// set the buffer to non-empty
-			this->isEmpty.store(false, std::memory_order_release);
+			this->isEmpty.store(false);
 
 		// return the number of actually written elements
 		return writeLinear + writeCircular;
@@ -356,9 +356,9 @@ public:
 		}
 
 		// reset the state of the buffer
-		this->isEmpty.store(true, std::memory_order_release);
-		this->readHead.store(0, std::memory_order_release);
-		this->writeHead.store(0, std::memory_order_release);
+		this->isEmpty.store(true);
+		this->readHead.store(0);
+		this->writeHead.store(0);
 	}
 
 	// copy constructor
@@ -371,9 +371,9 @@ public:
 		for(SizeType n = 0; n < this->bufferSize; ++n)
 			this->buffer[n] = other.buffer[n];
 
-		this->isFull.store(other.isFull.load(std::memory_order_acquire), std::memory_order_release);
-		this->readHead.store(other.readHead.load(std::memory_order_acquire), std::memory_order_release);
-		this->writeHead.store(other.writeHead.load(std::memory_order_acquire), std::memory_order_release);
+		this->isFull.store(other.isFull.load());
+		this->readHead.store(other.readHead.load());
+		this->writeHead.store(other.writeHead.load());
 	}
 
 	// copy operator
@@ -386,9 +386,9 @@ public:
 		for(SizeType n = 0; n < this->bufferSize; ++n)
 			this->buffer[n] = other.buffer[n];
 
-		this->isFull.store(other.isFull.load(std::memory_order_acquire), std::memory_order_release);
-		this->readHead.store(other.readHead.load(std::memory_order_acquire), std::memory_order_release);
-		this->writeHead.store(other.writeHead.load(std::memory_order_acquire), std::memory_order_release);
+		this->isFull.store(other.isFull.load());
+		this->readHead.store(other.readHead.load());
+		this->writeHead.store(other.writeHead.load());
 
 		return *this;
 	}
@@ -408,11 +408,11 @@ private:
 
 	// get the current state of the buffer
 	State getState(SizeType& readHeadOut, SizeType& writeHeadOut) const {
-		readHeadOut = this->readHead.load(std::memory_order_acquire);
-		writeHeadOut = this->writeHead.load(std::memory_order_acquire);
+		readHeadOut = this->readHead.load();
+		writeHeadOut = this->writeHead.load();
 
 		if(readHeadOut == writeHeadOut || !(this->bufferSize))
-			return this->isEmpty.load(std::memory_order_acquire) ? STATE_EMPTY : STATE_FULL;
+			return this->isEmpty.load() ? STATE_EMPTY : STATE_FULL;
 
 		if(readHeadOut < writeHeadOut)
 			return STATE_READ_BEFORE_WRITE;
