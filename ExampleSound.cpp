@@ -19,7 +19,8 @@ ExampleSound::ExampleSound()
 		  soundWavesToAudioThread(maxSoundWaves),
 		  indexNextSoundWaveIntermediary(0),
 		  indexNextSoundWaveAudioThread(0),
-		  isClearSoundWaves(false) {
+		  isClearSoundWaves(false),
+		  numSoundWaves(0) {
 	// setup random generators
 	this->randomGenerator.setRealLimits(0.1, 1.5);		// wave lengths between 0.1 and 1.5 seconds
 	this->randomGenerator.setByteLimits(0, 47);			// 48 tones over three octaves
@@ -172,7 +173,9 @@ void ExampleSound::onUpdate(double elapsedTime) {
 
 	// show number of sound waves and current wave resolution
 	this->setDebugText(
-			"res="
+			"n="
+			+ std::to_string(this->numSoundWaves)
+			+ ", res="
 			+ std::to_string(this->waveResolution)
 			+ "ms"
 			+ errorString
@@ -471,7 +474,8 @@ double ExampleSound::generateSound(unsigned int channel, double time, bool forAu
 			return this->generateSoundFrom(
 					time,
 					this->soundWavesForIntermediary,
-					ExampleSound::maxSoundWaves
+					ExampleSound::maxSoundWaves,
+					true
 			);
 	}
 
@@ -479,15 +483,23 @@ double ExampleSound::generateSound(unsigned int channel, double time, bool forAu
 }
 
 // generate sound at the specified time from the specified source
-double ExampleSound::generateSoundFrom(double time, SoundWave * from, std::size_t n) {
+double ExampleSound::generateSoundFrom(double time, SoundWave * from, std::size_t n, bool count) {
 	if(!n)
 		return 0.;
+
+	if(count)
+		this->numSoundWaves = 0;
 
 	// mixing
 	double result = 0.;
 
 	for(std::size_t i = 0; i < n; ++i)
-		result += this->masterVolume * from[i].get(time);
+		if(from[i].exists()) {
+			result += this->masterVolume * from[i].get(time);
+
+			if(count)
+				++(this->numSoundWaves);
+		}
 
 	// clipping
 	if(result > this->maxVolume)
