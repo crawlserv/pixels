@@ -30,6 +30,12 @@ public:
 	using ResizeFunction = std::function<void(int, int)>;
 	using UpdateFunction = std::function<void(double)>;
 
+	enum RenderingMode {
+		RENDERING_MODE_PBO,
+		RENDERING_MODE_POINTS,
+		RENDERING_MODE_TEXTURE
+	};
+
 	MainWindow();
 	virtual ~MainWindow();
 
@@ -41,12 +47,14 @@ public:
 	double getTime() const;
 	double getElapsedTime() const;
 	double getFPS() const;
+	RenderingMode getRenderingMode() const;
 
 	bool isKeyPressed(unsigned int code) const;
 	bool isKeyHeld(unsigned int code) const;
 	bool isKeyReleased(unsigned int code) const;
 	bool isKeyRepeated(unsigned int code) const;
 
+	void setRenderingMode(RenderingMode mode);
 	void setClearBuffer(bool clear);
 	void setPixelSize(unsigned short size);
 	void setPixelTest(const PixelTest& test);
@@ -62,10 +70,10 @@ private:
 	void setProjection();
 	void clearKeys();
 
-	void initPixelBuffer();
-	void beginPixelBuffer();
-	void endPixelBuffer();
-	void clearPixelBuffer();
+	void initRenderingTarget();
+	void beginRendering();
+	void endRendering();
+	void destroyRenderingTarget();
 
 	void onFramebuffer(int w, int h);
 	void onKey(int key, int action);
@@ -74,10 +82,13 @@ private:
 	static void callbackFramebuffer(GLFWwindow * window, int width, int height);
 	static void callbackKey(GLFWwindow * window, int key, int scancode, int action, int mods);
 
+	static std::string glErrorString(GLenum errorCode);
+
 	bool glfwInitialized;
-	GLFWwindow * window;
-	unsigned int pixelBuffer;
-	std::size_t pixelBufferSize;
+	GLFWwindow * windowPointer;
+	RenderingMode renderingMode;
+	unsigned int renderTargetId;
+	std::size_t renderTargetSize;
 	Pixels pixels;
 
 	std::string title;
@@ -90,6 +101,7 @@ private:
 	unsigned short pixelSize;
 	unsigned short halfPixelSize;
 
+	bool rendering;
 	double lastTime;
 	double elapsedTime;
 	double fps;

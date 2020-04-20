@@ -21,6 +21,7 @@ public:
 	Engine();
 	virtual ~Engine();
 
+	void setRenderingMode(MainWindow::RenderingMode mode);
 	void setClearBuffer(bool clear);
 	void setPixelSize(unsigned short size);
 	void setPixelTest(const PixelTest& pixelTest);
@@ -40,6 +41,7 @@ protected:
 	int getWindowWidth() const;
 	int getWindowHeight() const;
 	double getTime() const;
+	MainWindow::RenderingMode getRenderingMode() const;
 
 	void clip(int& x, int& y);
 	void draw(int x, int y, unsigned char r, unsigned char g, unsigned char b);

@@ -10,9 +10,10 @@
 // constructor: set default values
 MainWindow::MainWindow()
 		: glfwInitialized(false),
-		  window(nullptr),
-		  pixelBuffer(0),
-		  pixelBufferSize(0),
+		  windowPointer(nullptr),
+		  renderingMode(RENDERING_MODE_TEXTURE),
+		  renderTargetId(0),
+		  renderTargetSize(0),
 		  width(0),
 		  height(0),
 		  bytes(4),
@@ -21,6 +22,7 @@ MainWindow::MainWindow()
 		  clearBuffer(false),
 		  pixelSize(1),
 		  halfPixelSize(0),
+		  rendering(false),
 		  lastTime(0.),
 		  elapsedTime(0.),
 		  fps(0.),
@@ -38,13 +40,13 @@ MainWindow::MainWindow()
 // destructor
 MainWindow::~MainWindow() {
 	// destroy pixel buffer if necessary
-	this->clearPixelBuffer();
+	this->destroyRenderingTarget();
 
 	// destroy window if necessary
-	if(this->window) {
-		glfwDestroyWindow(this->window);
+	if(this->windowPointer) {
+		glfwDestroyWindow(this->windowPointer);
 
-		this->window = nullptr;
+		this->windowPointer = nullptr;
 	}
 
 	// terminate GLFW if necessary
@@ -64,23 +66,23 @@ void MainWindow::init(unsigned int w, unsigned int h, const std::string& title) 
 	this->glfwInitialized = true;
 
 	// create window
-	this->window = glfwCreateWindow(w, h, title.c_str(), nullptr, nullptr);
+	this->windowPointer = glfwCreateWindow(w, h, title.c_str(), nullptr, nullptr);
 
-	if(!(this->window))
+	if(!(this->windowPointer))
 		throw std::runtime_error("glfwCreateWindow failed");
 
 	this->title = title;
 
 	// set additional window options
-	glfwSetWindowUserPointer(this->window, this);
-	glfwSetFramebufferSizeCallback(this->window, MainWindow::callbackFramebuffer);
-	glfwSetKeyCallback(this->window, MainWindow::callbackKey);
+	glfwSetWindowUserPointer(this->windowPointer, this);
+	glfwSetFramebufferSizeCallback(this->windowPointer, MainWindow::callbackFramebuffer);
+	glfwSetKeyCallback(this->windowPointer, MainWindow::callbackKey);
 
 	// get size of framebuffer
-	glfwGetFramebufferSize(this->window, &(this->width), &(this->height));
+	glfwGetFramebufferSize(this->windowPointer, &(this->width), &(this->height));
 
 	// make OpenGL context current and disable vertical synchronization
-	glfwMakeContextCurrent(this->window);
+	glfwMakeContextCurrent(this->windowPointer);
 	glfwSwapInterval(0);
 
 	// set additional OpenGL options
@@ -90,10 +92,8 @@ void MainWindow::init(unsigned int w, unsigned int h, const std::string& title) 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glClearColor(0., 0., 0., 1.);
 
-	// initialize pixel buffer if necessary
-	this->initPixelBuffer();
-
-	// set projection
+	// initialize rendering target and set projection
+	this->initRenderingTarget();
 	this->setProjection();
 
 	// save starting time
@@ -103,19 +103,19 @@ void MainWindow::init(unsigned int w, unsigned int h, const std::string& title) 
 // tick in window loop to process window events, return whether window has been closed
 bool MainWindow::update() {
 	// check whether window has been closed
-	if(glfwWindowShouldClose(this->window))
+	if(glfwWindowShouldClose(this->windowPointer))
 		return false;
 
 	// check whether debugging string has been changed
 	if(this->debugChanged) {
 		if(this->debug.empty())
-			glfwSetWindowTitle(this->window, this->title.c_str());
+			glfwSetWindowTitle(this->windowPointer, this->title.c_str());
 		else {
 			std::string fullTitle(this->title);
 
 			fullTitle += " [" + this->debug + "]";
 
-			glfwSetWindowTitle(this->window, fullTitle.c_str());
+			glfwSetWindowTitle(this->windowPointer, fullTitle.c_str());
 		}
 
 		this->debugChanged = false;
@@ -125,19 +125,19 @@ bool MainWindow::update() {
 	glfwPollEvents();
 
 	// begin rendering to pixel buffer
-	this->beginPixelBuffer();
+	this->beginRendering();
 
 	// update frame
 	this->onUpdate(this->getElapsedTime());
 
 	// end rendering to pixel buffer
-	this->endPixelBuffer();
+	this->endRendering();
 
 	// clear keys
 	this->clearKeys();
 
 	// flush the buffer
-	glfwSwapBuffers(this->window);
+	glfwSwapBuffers(this->windowPointer);
 
 	// calculate the framerate
 	double currentTime = glfwGetTime();
@@ -176,6 +176,11 @@ double MainWindow::getFPS() const {
 	return this->fps;
 }
 
+// get the current rendering mode
+MainWindow::RenderingMode MainWindow::getRenderingMode() const {
+	return this->renderingMode;
+}
+
 // check whether the specified key has been pressed this frame
 bool MainWindow::isKeyPressed(unsigned int code) const {
 	if(code <= 0 || code > GLFW_KEY_LAST)
@@ -208,7 +213,26 @@ bool MainWindow::isKeyRepeated(unsigned int code) const {
 	return this->keys[code - 1].repeated;
 }
 
-// set whether to clear the buffer on every frame
+// set the rendering mode
+void MainWindow::setRenderingMode(RenderingMode mode) {
+	// end rendering if necessary
+	if(this->rendering)
+		this->endRendering();
+
+	// destroy old rendering target
+	this->destroyRenderingTarget();
+
+	this->renderingMode = mode;
+
+	// initialize new rendering target
+	this->initRenderingTarget();
+
+	// start rendering if necessary
+	if(this->rendering)
+		this->beginRendering();
+}
+
+// set whether to clear the rendering target to black every frame
 void MainWindow::setClearBuffer(bool clear) {
 	this->clearBuffer = clear;
 }
@@ -219,6 +243,14 @@ void MainWindow::setPixelSize(unsigned short size) {
 	this->halfPixelSize = size / 2;
 
 	this->setProjection();
+
+	if(this->renderingMode == RENDERING_MODE_POINTS && this->rendering) {
+		this->endRendering();
+
+		glPointSize(this->pixelSize);
+
+		this->beginRendering();
+	}
 }
 
 // set a test for pixels before drawing them
@@ -248,36 +280,54 @@ void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsig
 				const auto putX = offsetX + relX;
 				const auto putY = offsetY + relY;
 
-				if(this->pixelTest.test(putX, putY))
+				if(this->pixelTest.test(putX, putY)) {
+					if(this->renderingMode == RENDERING_MODE_POINTS) {
+						glColor4ub(r, g, b, a);
+						glVertex2i(x * this->pixelSize + this->halfPixelSize, y * this->pixelSize + this->halfPixelSize);
+					}
+					else
+						this->pixels.set(
+								putX,
+								putY,
+								r,
+								g,
+								b,
+								a
+						);
+				}
+				else if(this->pixelTest.debugging) {
+					if(this->renderingMode == RENDERING_MODE_POINTS) {
+						glColor4ub(r, g, b, a);
+						glVertex2i(x * this->pixelSize + this->halfPixelSize, y * this->pixelSize + this->halfPixelSize);
+					}
+					else
+						this->pixels.set(
+								putX,
+								putY,
+								255,
+								0,
+								0,
+								255
+						);
+				}
+			}
+	else
+		for(unsigned short relX = 0; relX < limitX; ++relX)
+			for(unsigned short relY = 0; relY < limitY; ++relY) {
+				if(this->renderingMode == RENDERING_MODE_POINTS) {
+					glColor4ub(r, g, b, a);
+					glVertex2i(x * this->pixelSize + this->halfPixelSize, y * this->pixelSize + this->halfPixelSize);
+				}
+				else
 					this->pixels.set(
-							putX,
-							putY,
+							offsetX + relX,
+							offsetY + relY,
 							r,
 							g,
 							b,
 							a
 					);
-				else if(this->pixelTest.debugging)
-					this->pixels.set(
-							putX,
-							putY,
-							255,
-							0,
-							0,
-							255
-					);
 			}
-	else
-		for(unsigned short relX = 0; relX < limitX; ++relX)
-			for(unsigned short relY = 0; relY < limitY; ++relY)
-				this->pixels.set(
-						offsetX + relX,
-						offsetY + relY,
-						r,
-						g,
-						b,
-						a
-				);
 }
 
 // set callback function for updating the content
@@ -336,73 +386,194 @@ void MainWindow::clearKeys() {
 	}
 }
 
-// initialize (and bind) pixel buffer
-void MainWindow::initPixelBuffer() {
-	// delete old pixel buffer if necessary
-	this->clearPixelBuffer();
+// initialize rendering target
+void MainWindow::initRenderingTarget() {
+	// destroy old rendering target if necessary
+	this->destroyRenderingTarget();
 
 	// initialize or reset pixel test
 	if(this->pixelTest)
 		this->pixelTest.init(this->width, this->height);
 
-	// calculate new pixel buffer size
-	this->pixelBufferSize = this->width * this->height * this->bytes;
+	switch(this->renderingMode) {
+	case RENDERING_MODE_PBO:
+		// calculate pixel buffer size
+		this->renderTargetSize = this->width * this->height * this->bytes;
 
-	// generate pixel buffer
-	glGenBuffers(1, &(this->pixelBuffer));
+		// generate pixel buffer
+		glGenBuffers(1, &(this->renderTargetId));
 
-	// check pixel buffer
-	if(!(this->pixelBuffer))
-		throw std::runtime_error("Could not create pixel buffer");
+		// check pixel buffer
+		if(!(this->renderTargetId)) {
+			const auto errorCode = glGetError();
 
-	// reserve memory for pixel buffer
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pixelBuffer);
-	glBufferData(GL_PIXEL_UNPACK_BUFFER, this->pixelBufferSize, nullptr, GL_STREAM_DRAW);
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+			switch(errorCode) {
+			case GL_NO_ERROR:
+				throw std::runtime_error(
+						"Could not create pixel buffer"
+				);
+
+			default:
+				throw std::runtime_error(
+						"Could not create pixel buffer: "
+						+ MainWindow::glErrorString(errorCode)
+				);
+			}
+		}
+
+		// reserve memory for pixel buffer
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->renderTargetId);
+		glBufferData(GL_PIXEL_UNPACK_BUFFER, this->renderTargetSize, nullptr, GL_STREAM_DRAW);
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+		break;
+
+	case RENDERING_MODE_POINTS:
+		// set pixel size
+		glPointSize(this->pixelSize);
+
+		// set blending (not supported yet)
+		//glEnable(GL_BLEND);
+
+		break;
+
+	case RENDERING_MODE_TEXTURE:
+		// enable texturing
+		glEnable(GL_TEXTURE_2D);
+
+		// generate and bind texture
+		glGenTextures(1, &(this->renderTargetId));
+		glBindTexture(GL_TEXTURE_2D, this->renderTargetId);
+
+		// set texture properties
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+
+		// allocate memory for rendering data
+		this->pixels.allocate(this->width, this->height, this->bytes);
+
+		break;
+	}
 }
 
-// bind pixel buffer
-void MainWindow::beginPixelBuffer() {
+// start rendering a single frame
+void MainWindow::beginRendering() {
 	// notify pixel test of coming frame
 	if(this->pixelTest)
 		this->pixelTest.frame();
 
-	// bind buffer
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pixelBuffer);
+	this->rendering = true;
 
-	// map pixels
-	this->pixels.map(
-			this->width,
-			this->height,
-			this->bytes,
-			static_cast<unsigned char *>(glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY))
-	);
+	switch(this->renderingMode) {
+	case RENDERING_MODE_PBO:
+		// bind buffer
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->renderTargetId);
 
-	if(!(this->pixels))
-		throw std::runtime_error("Could not map to pixel buffer");
+		// map pixels
+		this->pixels.map(
+				this->width,
+				this->height,
+				this->bytes,
+				static_cast<unsigned char *>(glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY))
+		);
 
-	// clear pixel buffer if necessary
-	if(this->clearBuffer)
-		this->pixels.fill(0, 0, 0, 255);
+		if(!(this->pixels))
+			throw std::runtime_error("Could not map to pixel buffer");
+
+		// clear the pixel buffer object if necessary
+		if(this->clearBuffer)
+			this->pixels.fill(0, 0, 0, 255);
+
+		break;
+
+	case RENDERING_MODE_POINTS:
+		// clear the OpenGL framebuffer if necessary
+		if(this->clearBuffer)
+			glClear(GL_COLOR_BUFFER_BIT);
+
+		glBegin(GL_POINTS);
+
+		break;
+
+	case RENDERING_MODE_TEXTURE:
+		// clear the texture if necessary
+		if(this->clearBuffer)
+			this->pixels.fill(0, 0, 0, 255);
+
+		break;
+	}
 }
 
-// unbind pixel buffer and copy it to GPU
-void MainWindow::endPixelBuffer() {
-	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+// finish up rendering a single frame
+void MainWindow::endRendering() {
+	switch(this->renderingMode) {
+	case RENDERING_MODE_PBO:
+		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 
-	this->pixels.unmap();
+		this->pixels.unmap();
 
-	glDrawPixels(this->width, this->height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+		glDrawPixels(this->width, this->height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+		break;
+
+	case RENDERING_MODE_POINTS:
+		glEnd();
+
+		break;
+
+	case RENDERING_MODE_TEXTURE:
+		// update texture
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->width, this->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, this->pixels.get());
+
+		// render textured quad
+		glBegin(GL_QUADS);
+
+		glTexCoord2f(0., 1.);
+		glVertex2i(0, 0);
+
+		glTexCoord2f(0., 0.);
+		glVertex2i(0, this->height);
+
+		glTexCoord2f(1., 0.);
+		glVertex2i(this->width, this->height);
+
+		glTexCoord2f(1., 1.);
+		glVertex2i(this->width, 0);
+
+		glEnd();
+
+		break;
+	}
+
+	this->rendering = false;
 }
 
-// clear pixel buffer
-void MainWindow::clearPixelBuffer() {
-	if(this->pixelBuffer) {
-		glDeleteBuffers(1, &(this->pixelBuffer));
+// destroy rendering target
+void MainWindow::destroyRenderingTarget() {
+	switch(this->renderingMode) {
+	case RENDERING_MODE_PBO:
+		if(this->renderTargetId) {
+			glDeleteBuffers(1, &(this->renderTargetId));
 
-		this->pixelBuffer = 0;
+			this->renderTargetId = 0;
+		}
+
+		break;
+
+	case RENDERING_MODE_POINTS:
+		glDisable(GL_BLEND);
+
+		break;
+
+	case RENDERING_MODE_TEXTURE:
+		glDeleteTextures(1, &(this->renderTargetId));
+
+		this->pixels.deallocate();
+
+		break;
 	}
 }
 
@@ -414,8 +585,8 @@ void MainWindow::onFramebuffer(int w, int h) {
 	this->width = w;
 	this->height = h;
 
-	this->initPixelBuffer();
-
+	// initialize rendering target and set projection
+	this->initRenderingTarget();
 	this->setProjection();
 
 	if(this->onResize)
@@ -467,4 +638,39 @@ void MainWindow::callbackKey(GLFWwindow * window, int key, int scancode, int act
 	UNUSED(scancode);
 	UNUSED(mods);
 	static_cast<MainWindow *>(glfwGetWindowUserPointer(window))->onKey(key, action);
+}
+
+// get the last OpenGL error as a string
+std::string MainWindow::glErrorString(GLenum errorCode) {
+	switch(errorCode) {
+	case GL_NO_ERROR:
+		return "GL_NO_ERROR";
+
+	case GL_INVALID_ENUM:
+		return "GL_INVALID_ENUM";
+
+	case GL_INVALID_VALUE:
+		return "GL_INVALID_VALUE";
+
+	case GL_INVALID_OPERATION:
+		return "GL_INVALID_OPERATION";
+
+	case GL_STACK_OVERFLOW:
+		return "GL_STACK_OVERFLOW";
+
+	case GL_STACK_UNDERFLOW:
+		return "GL_STACK_UNDERFLOW";
+
+	case GL_OUT_OF_MEMORY:
+		return "GL_OUT_OF_MEMORY";
+
+	case GL_TABLE_TOO_LARGE:
+		return "GL_TABLE_TOO_LARGE";
+
+	case GL_INVALID_FRAMEBUFFER_OPERATION:
+		return "GL_INVALID_FRAMEBUFFER_OPERATION";
+
+	default:
+		return "UNKNOWN ERROR";
+	}
 }

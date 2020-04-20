@@ -11,6 +11,11 @@
 Engine::Engine() : oldTime(0.), debugChanged(false) {}
 Engine::~Engine() {}
 
+// set the rendering mode
+void Engine::setRenderingMode(MainWindow::RenderingMode mode) {
+	this->window.setRenderingMode(mode);
+}
+
 // set whether to clear the buffer every frame
 void Engine::setClearBuffer(bool clear) {
 	this->window.setClearBuffer(clear);
@@ -94,6 +99,11 @@ int Engine::getWindowHeight() const {
 // get the current (run)time
 double Engine::getTime() const {
 	return this->window.getTime();
+}
+
+// get the current rendering mode
+MainWindow::RenderingMode Engine::getRenderingMode() const {
+	return this->window.getRenderingMode();
 }
 
 // clip x and y into window space
