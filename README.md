@@ -2,9 +2,27 @@
 
 A playground for pixel-by-pixel software rendering and simple sound synthesis.
 
+## Example
+
+Load the framework but draw nothing.
+
+```c++
+// (main.cpp)
+#include "Example.h"
+
+int main(int argc, char * argv[]) {
+  return Example().run(argc, argv);
+}
+```
+
+![Example](screens/null.png)
+
+* Press the UP and DOWN arrow keys to adjust the 'pixel' size.
+* Press the F10-F12 keys to change the rendering mode (F10=Pixel Buffer , F11=OpenGL Points, F12=Texture).
+
 ## ExampleNoise
 
-Draw all the pixels with random colors changing each frame.
+Draw every pixel with a random color changing each frame.
 
 ```c++
 // (main.cpp)
@@ -17,6 +35,7 @@ int main(int argc, char * argv[]) {
 
 * Press SPACE to change the algorithm for creating pseudo-random numbers.
 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
+* Press the F10-F12 keys to change the rendering mode (F10=Pixel Buffer , F11=OpenGL Points, F12=Texture).
 
 ![ExampleNoise](screens/noise.png)
 
@@ -38,6 +57,7 @@ int main(int argc, char * argv[]) {
 * Press SPACE to switch rendering the borders of the rectangles.
 * Press TAB to test for and debug overlapping pixels.
 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
+* Press the F10-F12 keys to change the rendering mode (F10=Pixel Buffer , F11=OpenGL Points, F12=Texture).
 
 ![ExampleRects](screens/rects.png)
 
@@ -60,8 +80,9 @@ int main(int argc, char * argv[]) {
 * Press BACKSPACE to add a semi-random sawtooth sound wave.
 * Press N to add some semi-random noise.
 * Press ESC to clear all sound waves.
-* Press the UP and DOWN arrow keys to adjust the 'pixel' size.
 * Press the RIGHT and LEFT arrow keys to adjust the resolution of the rendered sound wave.
+* Press the UP and DOWN arrow keys to adjust the 'pixel' size.
+* Press the F10-F12 keys to change the rendering mode (F10=Pixel Buffer , F11=OpenGL Points, F12=Texture).
 
 ![ExampleSound](screens/sound.png)
 

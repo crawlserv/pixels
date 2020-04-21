@@ -39,7 +39,10 @@ void Example::onUpdate(double elapsedTime) {
 	UNUSED(elapsedTime);
 
 	/*
-	// handle keys
+	 * <put rendering code here>
+	 */
+
+	// handle UP/DOWN arrow keys for changing the 'pixel' size
 	const unsigned short oldPixelSize = this->pixelSize;
 
 	if(this->isKeyPressed(GLFW_KEY_UP) && this->pixelSize < 100)
@@ -56,5 +59,20 @@ void Example::onUpdate(double elapsedTime) {
 
 	if(this->pixelSize != oldPixelSize)
 		this->setPixelSize(this->pixelSize);
-	*/
+
+	// handle F10-F12 keys for changing the rendering mode
+	const auto currentRenderingMode = this->getRenderingMode();
+	auto newRenderingMode = currentRenderingMode;
+
+	if(this->isKeyPressed(GLFW_KEY_F10))
+		newRenderingMode = MainWindow::RENDERING_MODE_PBO;
+
+	if(this->isKeyPressed(GLFW_KEY_F11))
+		newRenderingMode = MainWindow::RENDERING_MODE_POINTS;
+
+	if(this->isKeyPressed(GLFW_KEY_F12))
+		newRenderingMode = MainWindow::RENDERING_MODE_TEXTURE;
+
+	if(newRenderingMode != currentRenderingMode)
+		this->setRenderingMode(newRenderingMode);
 }

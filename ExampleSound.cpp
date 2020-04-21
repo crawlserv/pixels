@@ -181,7 +181,68 @@ void ExampleSound::onUpdate(double elapsedTime) {
 			+ errorString
 	);
 
-	// handle keys
+	// handle RIGHT/LEFT arrow keys for changing the resolution of the displayed sound wave
+	if(this->isKeyPressed(GLFW_KEY_RIGHT) && this->waveResolution < 100)
+		++(this->waveResolution);
+
+	if(this->isKeyRepeated(GLFW_KEY_RIGHT) && this->waveResolution < 100)
+		++(this->waveResolution);
+
+	if(this->isKeyPressed(GLFW_KEY_LEFT) && this->waveResolution > 1)
+		--(this->waveResolution);
+
+	if(this->isKeyRepeated(GLFW_KEY_LEFT) && this->waveResolution > 1)
+		--(this->waveResolution);
+
+	std::vector<Command> commands;
+
+	// handle ENTER key for adding a sine wave
+	if(this->isKeyPressed(GLFW_KEY_ENTER))
+		commands.emplace_back(ACTION_ADD_SINE);
+
+	if(this->isKeyRepeated(GLFW_KEY_ENTER))
+		commands.emplace_back(ACTION_ADD_SINE);
+
+	// handle SPACE key for adding a square wave
+	if(this->isKeyPressed(GLFW_KEY_SPACE))
+		commands.emplace_back(ACTION_ADD_SQUARE);
+
+	if(this->isKeyRepeated(GLFW_KEY_SPACE))
+		commands.emplace_back(ACTION_ADD_SQUARE);
+
+	// handle TAB key for adding a triangle wave
+	if(this->isKeyPressed(GLFW_KEY_TAB))
+		commands.emplace_back(ACTION_ADD_TRIANGLE);
+
+	if(this->isKeyRepeated(GLFW_KEY_TAB))
+		commands.emplace_back(ACTION_ADD_TRIANGLE);
+
+	// handle BACKSPACE key for adding a sawtooth wave
+	if(this->isKeyPressed(GLFW_KEY_BACKSPACE))
+		commands.emplace_back(ACTION_ADD_SAWTOOTH);
+
+	if(this->isKeyRepeated(GLFW_KEY_BACKSPACE))
+		commands.emplace_back(ACTION_ADD_SAWTOOTH);
+
+	// handle N key for adding noise
+	if(this->isKeyPressed(GLFW_KEY_N))
+		commands.emplace_back(ACTION_ADD_NOISE);
+
+	if(this->isKeyRepeated(GLFW_KEY_N))
+		commands.emplace_back(ACTION_ADD_NOISE);
+
+	// handle ESCAPE key for removing all sound waves
+	if(this->isKeyPressed(GLFW_KEY_ESCAPE))
+		commands.emplace_back(ACTION_CLEAR);
+
+	if(this->isKeyRepeated(GLFW_KEY_ESCAPE))
+		commands.emplace_back(ACTION_CLEAR);
+
+	// send commands to intermediary thread
+	if(!commands.empty())
+		this->commandsToIntermediary.push(commands);
+
+	// handle UP/DOWN arrow keys for changing the 'pixel' size
 	const unsigned short oldPixelSize = this->pixelSize;
 
 	if(this->isKeyPressed(GLFW_KEY_UP) && this->pixelSize < 100)
@@ -199,59 +260,21 @@ void ExampleSound::onUpdate(double elapsedTime) {
 	if(this->pixelSize != oldPixelSize)
 		this->setPixelSize(this->pixelSize);
 
-	if(this->isKeyPressed(GLFW_KEY_RIGHT) && this->waveResolution < 100)
-		++(this->waveResolution);
+	// handle F10-F12 keys for changing the rendering mode
+	const auto currentRenderingMode = this->getRenderingMode();
+	auto newRenderingMode = currentRenderingMode;
 
-	if(this->isKeyRepeated(GLFW_KEY_RIGHT) && this->waveResolution < 100)
-		++(this->waveResolution);
+	if(this->isKeyPressed(GLFW_KEY_F10))
+		newRenderingMode = MainWindow::RENDERING_MODE_PBO;
 
-	if(this->isKeyPressed(GLFW_KEY_LEFT) && this->waveResolution > 1)
-		--(this->waveResolution);
+	if(this->isKeyPressed(GLFW_KEY_F11))
+		newRenderingMode = MainWindow::RENDERING_MODE_POINTS;
 
-	if(this->isKeyRepeated(GLFW_KEY_LEFT) && this->waveResolution > 1)
-		--(this->waveResolution);
+	if(this->isKeyPressed(GLFW_KEY_F12))
+		newRenderingMode = MainWindow::RENDERING_MODE_TEXTURE;
 
-	std::vector<Command> commands;
-
-	if(this->isKeyPressed(GLFW_KEY_ENTER))
-		commands.emplace_back(ACTION_ADD_SINE);
-
-	if(this->isKeyRepeated(GLFW_KEY_ENTER))
-		commands.emplace_back(ACTION_ADD_SINE);
-
-	if(this->isKeyPressed(GLFW_KEY_SPACE))
-		commands.emplace_back(ACTION_ADD_SQUARE);
-
-	if(this->isKeyRepeated(GLFW_KEY_SPACE))
-		commands.emplace_back(ACTION_ADD_SQUARE);
-
-	if(this->isKeyPressed(GLFW_KEY_TAB))
-		commands.emplace_back(ACTION_ADD_TRIANGLE);
-
-	if(this->isKeyRepeated(GLFW_KEY_TAB))
-		commands.emplace_back(ACTION_ADD_TRIANGLE);
-
-	if(this->isKeyPressed(GLFW_KEY_BACKSPACE))
-		commands.emplace_back(ACTION_ADD_SAWTOOTH);
-
-	if(this->isKeyRepeated(GLFW_KEY_BACKSPACE))
-		commands.emplace_back(ACTION_ADD_SAWTOOTH);
-
-	if(this->isKeyPressed(GLFW_KEY_N))
-		commands.emplace_back(ACTION_ADD_NOISE);
-
-	if(this->isKeyRepeated(GLFW_KEY_N))
-		commands.emplace_back(ACTION_ADD_NOISE);
-
-	if(this->isKeyPressed(GLFW_KEY_ESCAPE))
-		commands.emplace_back(ACTION_CLEAR);
-
-	if(this->isKeyRepeated(GLFW_KEY_ESCAPE))
-		commands.emplace_back(ACTION_CLEAR);
-
-	// send commands to intermediary thread
-	if(!commands.empty())
-		this->commandsToIntermediary.push(commands);
+	if(newRenderingMode != currentRenderingMode)
+		this->setRenderingMode(newRenderingMode);
 }
 
 // clear resources

@@ -54,7 +54,25 @@ void ExampleNoise::onUpdate(double elapsedTime) {
 		}
 	}
 
-	// handle keys
+	// handle SPACE key for changing the algorithm used for pseudo-random number generation
+	const unsigned char oldRandAlgo = this->randGenerator.getAlgo();
+	unsigned char newRandAlgo = oldRandAlgo;
+
+	if(this->isKeyPressed(GLFW_KEY_SPACE))
+		++newRandAlgo;
+
+	if(this->isKeyRepeated(GLFW_KEY_SPACE))
+		++newRandAlgo;
+
+	newRandAlgo %= RAND_ALGO_NUM;
+
+	if(newRandAlgo != oldRandAlgo) {
+		this->randGenerator.setAlgo(static_cast<Rand::Algo>(newRandAlgo));
+
+		this->setDebugText(this->randGenerator.str());
+	}
+
+	// handle UP/DOWN arrow keys for changing the 'pixel' size
 	const unsigned short oldPixelSize = this->pixelSize;
 
 	if(this->isKeyPressed(GLFW_KEY_UP) && this->pixelSize < 100)
@@ -72,20 +90,19 @@ void ExampleNoise::onUpdate(double elapsedTime) {
 	if(this->pixelSize != oldPixelSize)
 		this->setPixelSize(this->pixelSize);
 
-	const unsigned char oldRandAlgo = this->randGenerator.getAlgo();
-	unsigned char newRandAlgo = oldRandAlgo;
+	// handle F10-F12 keys for changing the rendering mode
+	const auto currentRenderingMode = this->getRenderingMode();
+	auto newRenderingMode = currentRenderingMode;
 
-	if(this->isKeyPressed(GLFW_KEY_SPACE))
-		++newRandAlgo;
+	if(this->isKeyPressed(GLFW_KEY_F10))
+		newRenderingMode = MainWindow::RENDERING_MODE_PBO;
 
-	if(this->isKeyRepeated(GLFW_KEY_SPACE))
-		++newRandAlgo;
+	if(this->isKeyPressed(GLFW_KEY_F11))
+		newRenderingMode = MainWindow::RENDERING_MODE_POINTS;
 
-	newRandAlgo %= RAND_ALGO_NUM;
+	if(this->isKeyPressed(GLFW_KEY_F12))
+		newRenderingMode = MainWindow::RENDERING_MODE_TEXTURE;
 
-	if(newRandAlgo != oldRandAlgo) {
-		this->randGenerator.setAlgo(static_cast<Rand::Algo>(newRandAlgo));
-
-		this->setDebugText(this->randGenerator.str());
-	}
+	if(newRenderingMode != currentRenderingMode)
+		this->setRenderingMode(newRenderingMode);
 }

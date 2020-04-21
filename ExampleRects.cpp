@@ -64,9 +64,44 @@ void ExampleRects::onUpdate(double elapsedTime) {
 
 	this->setDebugText(debugStr);
 
-	// handle keys
+	// handle ENTER key for adding a rectangle
+	if(this->isKeyPressed(GLFW_KEY_ENTER))
+		this->add();
+
+	if(this->isKeyRepeated(GLFW_KEY_ENTER))
+		this->add();
+
+	// handle ESCAPE key for removing all rectangles
+	if(this->isKeyPressed(GLFW_KEY_ESCAPE))
+		this->rects.clear();
+
+	if(this->isKeyRepeated(GLFW_KEY_ESCAPE))
+		this->rects.clear();
+
+	// handle SPACE key for toggling drawing the borders of the rectangles
+	if(this->isKeyPressed(GLFW_KEY_SPACE))
+		this->renderBorders = !(this->renderBorders);
+
+	// handle TAB key for toggling pixel testing
+	if(this->isKeyPressed(GLFW_KEY_TAB)) {
+		this->testPixels = !(this->testPixels);
+
+		if(this->testPixels) {
+			PixelTest pixelTest;
+
+			pixelTest.debugging = true;
+			pixelTest.init = std::bind(&ExampleRects::pixelTestInit, this, std::placeholders::_1, std::placeholders::_2);
+			pixelTest.frame = std::bind(&ExampleRects::pixelTestFrame, this);
+			pixelTest.test = std::bind(&ExampleRects::pixelTestTest, this, std::placeholders::_1, std::placeholders::_2);
+
+			this->setPixelTest(pixelTest);
+		}
+		else
+			this->disablePixelTest();
+	}
+
+	// handle UP/DOWN arrow keys for changing the 'pixel' size
 	const unsigned short oldPixelSize = this->pixelSize;
-	const bool oldTestPixels = this->testPixels;
 
 	if(this->isKeyPressed(GLFW_KEY_UP) && this->pixelSize < 100)
 		++(this->pixelSize);
@@ -83,44 +118,21 @@ void ExampleRects::onUpdate(double elapsedTime) {
 	if(this->pixelSize != oldPixelSize)
 		this->setPixelSize(this->pixelSize);
 
-	if(this->isKeyPressed(GLFW_KEY_ENTER))
-		this->add();
+	// handle F10-F12 keys for changing the rendering mode
+	const auto currentRenderingMode = this->getRenderingMode();
+	auto newRenderingMode = currentRenderingMode;
 
-	if(this->isKeyRepeated(GLFW_KEY_ENTER))
-		this->add();
+	if(this->isKeyPressed(GLFW_KEY_F10))
+		newRenderingMode = MainWindow::RENDERING_MODE_PBO;
 
-	if(this->isKeyPressed(GLFW_KEY_ESCAPE))
-		this->rects.clear();
+	if(this->isKeyPressed(GLFW_KEY_F11))
+		newRenderingMode = MainWindow::RENDERING_MODE_POINTS;
 
-	if(this->isKeyRepeated(GLFW_KEY_ESCAPE))
-		this->rects.clear();
+	if(this->isKeyPressed(GLFW_KEY_F12))
+		newRenderingMode = MainWindow::RENDERING_MODE_TEXTURE;
 
-	if(this->isKeyPressed(GLFW_KEY_SPACE))
-		this->renderBorders = !(this->renderBorders);
-
-	if(this->isKeyRepeated(GLFW_KEY_SPACE))
-		this->renderBorders = !(this->renderBorders);
-
-	if(this->isKeyPressed(GLFW_KEY_TAB))
-		this->testPixels = !(this->testPixels);
-
-	if(this->isKeyRepeated(GLFW_KEY_TAB))
-		this->testPixels = !(this->testPixels);
-
-	if(this->testPixels != oldTestPixels) {
-		if(this->testPixels) {
-			PixelTest pixelTest;
-
-			pixelTest.debugging = true;
-			pixelTest.init = std::bind(&ExampleRects::pixelTestInit, this, std::placeholders::_1, std::placeholders::_2);
-			pixelTest.frame = std::bind(&ExampleRects::pixelTestFrame, this);
-			pixelTest.test = std::bind(&ExampleRects::pixelTestTest, this, std::placeholders::_1, std::placeholders::_2);
-
-			this->setPixelTest(pixelTest);
-		}
-		else
-			this->disablePixelTest();
-	}
+	if(newRenderingMode != currentRenderingMode)
+		this->setRenderingMode(newRenderingMode);
 }
 
 // add one rectangle
