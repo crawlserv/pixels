@@ -100,4 +100,4 @@ For using `Sound.h` and `Sound.cpp` you additionally need:
 
 * [libsoundio](http://libsound.io/) (`libsoundio`)
 
-Tested with `g++ (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0`.
+Tested with `g++ (Ubuntu 9.2.1-9ubuntu2) 9.2.1`.
