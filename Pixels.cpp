@@ -69,15 +69,7 @@ void Pixels::allocate(int w, int h, unsigned char b) {
 		this->allocated = true;
 
 		// set values for empty texture
-		for(int x = 0; x < this->width; ++x)
-			for(int y = 0; y < this->height; ++y) {
-				const auto offset = y * this->width * this->bytes + x * this->bytes;
-
-				this->pixels[offset] = 0;
-				this->pixels[offset + 1] = 0;
-				this->pixels[offset + 2] = 0;
-				this->pixels[offset + 3] = 255;
-			}
+		this->fill(0, 0, 0, 255);
 	}
 }
 
