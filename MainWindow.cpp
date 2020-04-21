@@ -261,7 +261,7 @@ void MainWindow::setPixelTest(const PixelTest& test) {
 		this->pixelTest.init(this->width, this->height);
 }
 
-// write one pixel into the buffer
+// write one pixel into the buffer / draw it onto the screen
 void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
 	const auto offsetX = x * this->pixelSize;
 	const auto offsetY = y * this->pixelSize;
