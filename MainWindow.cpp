@@ -258,76 +258,60 @@ void MainWindow::setPixelTest(const PixelTest& test) {
 	this->pixelTest = test;
 
 	if(this->pixelTest)
-		this->pixelTest.init(this->width, this->height);
+		this->pixelTest.init(this->pixelWidth, this->pixelHeight);
 }
 
 // write one pixel into the buffer / draw it onto the screen
-void MainWindow::putPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+void MainWindow::putPixel(
+		unsigned int x,
+		unsigned int y,
+		unsigned char r,
+		unsigned char g,
+		unsigned char b,
+		unsigned char a,
+		bool test
+) {
 	const auto offsetX = x * this->pixelSize;
 	const auto offsetY = y * this->pixelSize;
-	int limitX = this->pixelSize;
-	int limitY = this->pixelSize;
 
-	if(static_cast<int>(offsetX + limitX) > this->width)
-		limitX = this->width - offsetX;
+	// perform pixel test if necessary
+	if(test && this->pixelTest && !(this->pixelTest.test(x, y))) {
+		if(this->pixelTest.debugging)
+			// draw red pixel for debugging instead
+			putPixel(x, y, 255, 0, 0, 255, false);
 
-	if(static_cast<int>(offsetY + limitY) > this->height)
-		limitY = this->height - offsetY	;
+		return;
+	}
 
-	if(this->pixelTest)
+	if(this->renderingMode == RENDERING_MODE_POINTS) {
+		glColor4ub(r, g, b, a);
+		glVertex2i(x * this->pixelSize + this->halfPixelSize, y * this->pixelSize + this->halfPixelSize);
+	}
+	else {
+		int limitX = this->pixelSize;
+		int limitY = this->pixelSize;
+
+		if(static_cast<int>(offsetX + limitX) > this->width)
+			limitX = this->width - offsetX;
+
+		if(static_cast<int>(offsetY + limitY) > this->height)
+			limitY = this->height - offsetY	;
+
 		for(unsigned short relX = 0; relX < limitX; ++relX)
 			for(unsigned short relY = 0; relY < limitY; ++relY) {
 				const auto putX = offsetX + relX;
 				const auto putY = offsetY + relY;
 
-				if(this->pixelTest.test(putX, putY)) {
-					if(this->renderingMode == RENDERING_MODE_POINTS) {
-						glColor4ub(r, g, b, a);
-						glVertex2i(x * this->pixelSize + this->halfPixelSize, y * this->pixelSize + this->halfPixelSize);
-					}
-					else
-						this->pixels.set(
-								putX,
-								putY,
-								r,
-								g,
-								b,
-								a
-						);
-				}
-				else if(this->pixelTest.debugging) {
-					if(this->renderingMode == RENDERING_MODE_POINTS) {
-						glColor4ub(r, g, b, a);
-						glVertex2i(x * this->pixelSize + this->halfPixelSize, y * this->pixelSize + this->halfPixelSize);
-					}
-					else
-						this->pixels.set(
-								putX,
-								putY,
-								255,
-								0,
-								0,
-								255
-						);
-				}
+				this->pixels.set(
+						putX,
+						putY,
+						r,
+						g,
+						b,
+						a
+				);
 			}
-	else
-		for(unsigned short relX = 0; relX < limitX; ++relX)
-			for(unsigned short relY = 0; relY < limitY; ++relY) {
-				if(this->renderingMode == RENDERING_MODE_POINTS) {
-					glColor4ub(r, g, b, a);
-					glVertex2i(x * this->pixelSize + this->halfPixelSize, y * this->pixelSize + this->halfPixelSize);
-				}
-				else
-					this->pixels.set(
-							offsetX + relX,
-							offsetY + relY,
-							r,
-							g,
-							b,
-							a
-					);
-			}
+	}
 }
 
 // set callback function for updating the content
@@ -393,7 +377,7 @@ void MainWindow::initRenderingTarget() {
 
 	// initialize or reset pixel test
 	if(this->pixelTest)
-		this->pixelTest.init(this->width, this->height);
+		this->pixelTest.init(this->pixelWidth, this->pixelHeight);
 
 	switch(this->renderingMode) {
 	case RENDERING_MODE_PBO:

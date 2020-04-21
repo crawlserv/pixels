@@ -59,7 +59,15 @@ public:
 	void setClearBuffer(bool clear);
 	void setPixelSize(unsigned short size);
 	void setPixelTest(const PixelTest& test);
-	void putPixel(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
+	void putPixel(
+			unsigned int x,
+			unsigned int y,
+			unsigned char r,
+			unsigned char g,
+			unsigned char b,
+			unsigned char a = 255,
+			bool test = true
+	);
 
 	void setOnUpdate(UpdateFunction callBack);
 	void setOnResize(ResizeFunction callBack);
