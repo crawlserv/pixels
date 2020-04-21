@@ -19,6 +19,7 @@
 #include <functional>	// std::function, std::placeholders
 #include <stdexcept>	// std::runtime_error
 #include <string>		// std::string, std::to_string
+#include <vector>
 
 #include "Pixels.h"
 #include "PixelTest.h"
@@ -72,6 +73,7 @@ private:
 
 	void initRenderingTarget();
 	void beginRendering();
+	void renderQuad();
 	void endRendering();
 	void destroyRenderingTarget();
 
@@ -87,8 +89,8 @@ private:
 	bool glfwInitialized;
 	GLFWwindow * windowPointer;
 	RenderingMode renderingMode;
-	unsigned int renderTargetId;
-	std::size_t renderTargetSize;
+	unsigned int pboId;
+	unsigned int textureId;
 	Pixels pixels;
 
 	std::string title;

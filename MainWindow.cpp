@@ -11,9 +11,9 @@
 MainWindow::MainWindow()
 		: glfwInitialized(false),
 		  windowPointer(nullptr),
-		  renderingMode(RENDERING_MODE_TEXTURE),
-		  renderTargetId(0),
-		  renderTargetSize(0),
+		  renderingMode(RENDERING_MODE_PBO),
+		  pboId(0),
+		  textureId(0),
 		  width(0),
 		  height(0),
 		  bytes(4),
@@ -365,7 +365,7 @@ void MainWindow::setProjection() {
 	// set projection
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0, this->width, this->height, 0, 1, -1);
+	glOrtho(0, this->width, 0, this->height, 1, -1);
 
 	// set model
 	glMatrixMode(GL_MODELVIEW);
@@ -397,14 +397,11 @@ void MainWindow::initRenderingTarget() {
 
 	switch(this->renderingMode) {
 	case RENDERING_MODE_PBO:
-		// calculate pixel buffer size
-		this->renderTargetSize = this->width * this->height * this->bytes;
+		// generate pixel buffer object
+		glGenBuffers(1, &(this->pboId));
 
-		// generate pixel buffer
-		glGenBuffers(1, &(this->renderTargetId));
-
-		// check pixel buffer
-		if(!(this->renderTargetId)) {
+		// check pixel buffer object
+		if(this->pboId <= 0) {
 			const auto errorCode = glGetError();
 
 			switch(errorCode) {
@@ -421,10 +418,61 @@ void MainWindow::initRenderingTarget() {
 			}
 		}
 
-		// reserve memory for pixel buffer
-		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->renderTargetId);
-		glBufferData(GL_PIXEL_UNPACK_BUFFER, this->renderTargetSize, nullptr, GL_STREAM_DRAW);
+		// reserve memory for pixel buffer object
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pboId);
+			glBufferData(GL_PIXEL_UNPACK_BUFFER, this->width * this->height * this->bytes, nullptr, GL_STREAM_DRAW);
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+		// enable texturing
+		glEnable(GL_TEXTURE_2D);
+
+		// generate texture
+		glGenTextures(1, &(this->textureId));
+
+		// check texture
+		if(this->textureId <= 0) {
+			const auto errorCode = glGetError();
+
+			switch(errorCode) {
+			case GL_NO_ERROR:
+				throw std::runtime_error(
+						"Could not create texture"
+				);
+
+			default:
+				throw std::runtime_error(
+						"Could not create texture: "
+						+ MainWindow::glErrorString(errorCode)
+				);
+			}
+		}
+
+		// set texture properties and reserve memory for texture
+		glBindTexture(GL_TEXTURE_2D, this->textureId);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		// clear pixel buffer object
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pboId);
+
+		this->pixels.map(
+				this->width,
+				this->height,
+				this->bytes,
+				static_cast<unsigned char *>(glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY))
+		);
+
+		if(!(this->pixels))
+			throw std::runtime_error("Could not map memory of pixel buffer object");
+
+		this->pixels.fill(0, 0, 0, 255);
+
+		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+
+		this->pixels.unmap();
 
 		break;
 
@@ -435,6 +483,11 @@ void MainWindow::initRenderingTarget() {
 		// set blending (not supported yet)
 		//glEnable(GL_BLEND);
 
+		// clear both frame buffers (front and back)
+		glClear(GL_COLOR_BUFFER_BIT);
+		glfwSwapBuffers(this->windowPointer);
+		glClear(GL_COLOR_BUFFER_BIT);
+
 		break;
 
 	case RENDERING_MODE_TEXTURE:
@@ -442,8 +495,8 @@ void MainWindow::initRenderingTarget() {
 		glEnable(GL_TEXTURE_2D);
 
 		// generate and bind texture
-		glGenTextures(1, &(this->renderTargetId));
-		glBindTexture(GL_TEXTURE_2D, this->renderTargetId);
+		glGenTextures(1, &(this->textureId));
+		glBindTexture(GL_TEXTURE_2D, this->textureId);
 
 		// set texture properties
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -467,10 +520,10 @@ void MainWindow::beginRendering() {
 
 	switch(this->renderingMode) {
 	case RENDERING_MODE_PBO:
-		// bind buffer
-		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->renderTargetId);
+		// bind pixel buffer object
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->pboId);
 
-		// map pixels
+		// map memory of pixel buffer object
 		this->pixels.map(
 				this->width,
 				this->height,
@@ -479,7 +532,7 @@ void MainWindow::beginRendering() {
 		);
 
 		if(!(this->pixels))
-			throw std::runtime_error("Could not map to pixel buffer");
+			throw std::runtime_error("Could not map memory of pixel buffer object");
 
 		// clear the pixel buffer object if necessary
 		if(this->clearBuffer)
@@ -505,17 +558,47 @@ void MainWindow::beginRendering() {
 	}
 }
 
+// render textured quad
+void MainWindow::renderQuad() {
+	glBegin(GL_QUADS);
+
+	glTexCoord2f(0., 0.);
+	glVertex2i(0, 0);
+
+	glTexCoord2f(0., 1.);
+	glVertex2i(0, this->height);
+
+	glTexCoord2f(1., 1.);
+	glVertex2i(this->width, this->height);
+
+	glTexCoord2f(1., 0.);
+	glVertex2i(this->width, 0);
+
+	glEnd();
+}
+
 // finish up rendering a single frame
 void MainWindow::endRendering() {
 	switch(this->renderingMode) {
 	case RENDERING_MODE_PBO:
+		// unmap memory of pixel buffer object
 		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 
 		this->pixels.unmap();
 
-		glDrawPixels(this->width, this->height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+		//glDrawPixels(this->width, this->height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+		// bind and update texture
+		glBindTexture (GL_TEXTURE_2D, this->textureId);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->width, this->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, this->pixels.get());
 
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+		// render textured quad
+		this->renderQuad();
+
+		// unbind texture
+		glBindTexture(GL_TEXTURE_2D, 0);
 
 		break;
 
@@ -529,21 +612,7 @@ void MainWindow::endRendering() {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->width, this->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, this->pixels.get());
 
 		// render textured quad
-		glBegin(GL_QUADS);
-
-		glTexCoord2f(0., 1.);
-		glVertex2i(0, 0);
-
-		glTexCoord2f(0., 0.);
-		glVertex2i(0, this->height);
-
-		glTexCoord2f(1., 0.);
-		glVertex2i(this->width, this->height);
-
-		glTexCoord2f(1., 1.);
-		glVertex2i(this->width, 0);
-
-		glEnd();
+		this->renderQuad();
 
 		break;
 	}
@@ -555,10 +624,16 @@ void MainWindow::endRendering() {
 void MainWindow::destroyRenderingTarget() {
 	switch(this->renderingMode) {
 	case RENDERING_MODE_PBO:
-		if(this->renderTargetId) {
-			glDeleteBuffers(1, &(this->renderTargetId));
+		if(this->textureId > 0) {
+			glDeleteTextures(1, &(this->textureId));
 
-			this->renderTargetId = 0;
+			this->textureId = 0;
+		}
+
+		if(this->pboId > 0) {
+			glDeleteBuffers(1, &(this->pboId));
+
+			this->pboId = 0;
 		}
 
 		break;
@@ -569,7 +644,13 @@ void MainWindow::destroyRenderingTarget() {
 		break;
 
 	case RENDERING_MODE_TEXTURE:
-		glDeleteTextures(1, &(this->renderTargetId));
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		if(this->textureId > 0) {
+			glDeleteTextures(1, &(this->textureId));
+
+			this->textureId = 0;
+		}
 
 		this->pixels.deallocate();
 
