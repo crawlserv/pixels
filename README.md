@@ -15,10 +15,10 @@ int main(int argc, char * argv[]) {
 }
 ```
 
-![Example](screens/null.png)
-
 * Press the UP and DOWN arrow keys to adjust the 'pixel' size.
 * Press the F10-F12 keys to change the rendering mode (F10=Pixel Buffer , F11=OpenGL Points, F12=Texture).
+
+![Example](screens/null.png)
 
 ## ExampleNoise
 
